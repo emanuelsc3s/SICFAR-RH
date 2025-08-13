@@ -15,18 +15,18 @@ interface BirthdayPerson {
   date: string;
   fullDate: string;
   avatar?: string;
-  age?: number;
+  admissionDate?: string;
 }
 
 const allBirthdayData: BirthdayPerson[] = [
-  { name: "Carlos Santos", department: "TI", date: "15/08", fullDate: "15 de Agosto", avatar: "", age: 32 },
-  { name: "Maria João", department: "Marketing", date: "22/08", fullDate: "22 de Agosto", avatar: "", age: 28 },
-  { name: "Pedro Costa", department: "Vendas", date: "28/08", fullDate: "28 de Agosto", avatar: "", age: 35 },
-  { name: "Ana Silva", department: "RH", date: "05/09", fullDate: "05 de Setembro", avatar: "", age: 29 },
-  { name: "João Pereira", department: "Financeiro", date: "12/09", fullDate: "12 de Setembro", avatar: "", age: 41 },
-  { name: "Sandra Oliveira", department: "Operações", date: "18/09", fullDate: "18 de Setembro", avatar: "", age: 26 },
-  { name: "Ricardo Ferreira", department: "TI", date: "25/09", fullDate: "25 de Setembro", avatar: "", age: 33 },
-  { name: "Patrícia Lima", department: "Marketing", date: "02/10", fullDate: "02 de Outubro", avatar: "", age: 30 },
+  { name: "Carlos Santos", department: "TI", date: "15/08", fullDate: "15 de Agosto", avatar: "", admissionDate: "15/03/2020" },
+  { name: "Maria João", department: "Marketing", date: "22/08", fullDate: "22 de Agosto", avatar: "", admissionDate: "10/01/2019" },
+  { name: "Pedro Costa", department: "Vendas", date: "28/08", fullDate: "28 de Agosto", avatar: "", admissionDate: "05/07/2021" },
+  { name: "Ana Silva", department: "RH", date: "05/09", fullDate: "05 de Setembro", avatar: "", admissionDate: "22/11/2018" },
+  { name: "João Pereira", department: "Financeiro", date: "12/09", fullDate: "12 de Setembro", avatar: "", admissionDate: "08/04/2017" },
+  { name: "Sandra Oliveira", department: "Operações", date: "18/09", fullDate: "18 de Setembro", avatar: "", admissionDate: "14/09/2022" },
+  { name: "Ricardo Ferreira", department: "TI", date: "25/09", fullDate: "25 de Setembro", avatar: "", admissionDate: "30/06/2020" },
+  { name: "Patrícia Lima", department: "Marketing", date: "02/10", fullDate: "02 de Outubro", avatar: "", admissionDate: "12/02/2023" },
 ];
 
 const Aniversariantes = () => {
@@ -268,9 +268,9 @@ const Aniversariantes = () => {
                           <div className="flex items-center mt-1">
                             <Gift className="h-3 w-3 text-primary mr-1" />
                             <span className="text-xs text-primary font-medium">{person.fullDate}</span>
-                            {person.age && (
+                            {person.admissionDate && (
                               <span className="text-xs text-muted-foreground ml-2">
-                                ({person.age} anos)
+                                (Adm: {person.admissionDate})
                               </span>
                             )}
                           </div>
