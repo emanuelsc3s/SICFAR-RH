@@ -1,41 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Corporate Intranet Design System */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 98%;
+    --foreground: 223 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 223 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 223 47% 11%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Corporate Blue Palette */
+    --primary: 223 83% 33%;        /* #1E3A8A */
+    --primary-700: 230 86% 48%;    /* #1D4ED8 */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 223 83% 85%;
+    --primary-subtle: 223 83% 95%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 223 47% 11%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 223 83% 95%;
+    --accent-foreground: 223 83% 33%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
 
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 223 83% 33%;
+
+    /* Corporate Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-700)) 100%);
+    --gradient-subtle: linear-gradient(135deg, hsl(var(--primary-subtle)) 0%, hsl(var(--accent)) 100%);
+    
+    /* Shadows */
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-elevated: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
@@ -100,6 +118,36 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-primary;
+  }
+}
+
+@layer components {
+  /* Corporate Card Styles */
+  .tile-card {
+    @apply bg-card rounded-lg shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elevated)] 
+           transition-all duration-200 hover:scale-[1.02] cursor-pointer
+           border border-border/50;
+  }
+
+  .hero-gradient {
+    background: var(--gradient-primary);
+  }
+
+  .subtle-gradient {
+    background: var(--gradient-subtle);
+  }
+
+  /* Status indicators */
+  .status-online {
+    @apply bg-success rounded-full;
+  }
+
+  .status-away {
+    @apply bg-warning rounded-full;
+  }
+
+  .status-offline {
+    @apply bg-muted-foreground rounded-full;
   }
 }
