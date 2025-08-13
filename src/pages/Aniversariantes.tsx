@@ -62,13 +62,13 @@ const Aniversariantes = () => {
   const filteredData = useMemo(() => {
     return allBirthdayData.filter(person => {
       const matchesName = person.name.toLowerCase().includes(nameFilter.toLowerCase());
-      const matchesDepartment = !departmentFilter || person.department === departmentFilter;
+      const matchesDepartment = !departmentFilter || departmentFilter === "all" || person.department === departmentFilter;
       
       let matchesDate = true;
       if (dayFilter || monthFilter) {
         const [day, month] = person.date.split('/');
-        const matchesDay = !dayFilter || day === dayFilter;
-        const matchesMonth = !monthFilter || month === monthFilter;
+        const matchesDay = !dayFilter || dayFilter === "all" || day === dayFilter;
+        const matchesMonth = !monthFilter || monthFilter === "all" || month === monthFilter;
         matchesDate = matchesDay && matchesMonth;
       }
       
@@ -149,7 +149,7 @@ const Aniversariantes = () => {
                     <SelectValue placeholder="Todos os departamentos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os departamentos</SelectItem>
+                    <SelectItem value="all">Todos os departamentos</SelectItem>
                     {departments.map(dept => (
                       <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                     ))}
@@ -164,7 +164,7 @@ const Aniversariantes = () => {
                     <SelectValue placeholder="Selecionar dia" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os dias</SelectItem>
+                    <SelectItem value="all">Todos os dias</SelectItem>
                     {dayOptions.map(day => (
                       <SelectItem key={day} value={day}>{day}</SelectItem>
                     ))}
@@ -179,7 +179,7 @@ const Aniversariantes = () => {
                     <SelectValue placeholder="Selecionar mês" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os meses</SelectItem>
+                    <SelectItem value="all">Todos os meses</SelectItem>
                     {monthOptions.map(month => (
                       <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
                     ))}
@@ -188,16 +188,16 @@ const Aniversariantes = () => {
               </div>
             </div>
             
-            {(nameFilter || departmentFilter || dayFilter || monthFilter) && (
+            {(nameFilter || (departmentFilter && departmentFilter !== "all") || (dayFilter && dayFilter !== "all") || (monthFilter && monthFilter !== "all")) && (
               <div className="mt-4 flex justify-end">
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => {
                     setNameFilter("");
-                    setDepartmentFilter("");
-                    setDayFilter("");
-                    setMonthFilter("");
+                    setDepartmentFilter("all");
+                    setDayFilter("all");
+                    setMonthFilter("all");
                   }}
                 >
                   Limpar filtros
