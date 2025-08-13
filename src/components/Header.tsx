@@ -44,7 +44,7 @@ const Header = () => {
           <div className="flex items-center space-x-3 pl-3 border-l border-border/50">
             <div className="text-right">
               <p className="text-sm font-medium">Emanuel Silva</p>
-              <p className="text-xs text-muted-foreground">Analista RH</p>
+              <p className="text-xs text-muted-foreground">Gerente de TI</p>
             </div>
             <Avatar className="h-9 w-9">
               <AvatarImage src="/placeholder-avatar.jpg" />
