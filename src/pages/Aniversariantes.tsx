@@ -32,11 +32,15 @@ const allBirthdayData: BirthdayPerson[] = [
 const Aniversariantes = () => {
   const navigate = useNavigate();
   
+  // Get current month
+  const currentMonth = new Date().getMonth() + 1;
+  const currentMonthFormatted = String(currentMonth).padStart(2, '0');
+  
   // Filter states
   const [nameFilter, setNameFilter] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState("");
-  const [dayFilter, setDayFilter] = useState("");
-  const [monthFilter, setMonthFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [dayFilter, setDayFilter] = useState("all");
+  const [monthFilter, setMonthFilter] = useState(currentMonthFormatted);
 
   // Generate day and month options
   const dayOptions = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
@@ -76,13 +80,35 @@ const Aniversariantes = () => {
     });
   }, [nameFilter, departmentFilter, dayFilter, monthFilter]);
 
-  const currentMonth = filteredData.filter(person => 
-    person.date.includes("/08") || person.date.includes("/09")
-  );
-
-  const upcomingBirthdays = filteredData.filter(person => 
-    person.date.includes("/10")
-  );
+  // Group data by month
+  const groupedByMonth = useMemo(() => {
+    const groups: { [key: string]: BirthdayPerson[] } = {};
+    filteredData.forEach(person => {
+      const [_, month] = person.date.split('/');
+      const monthName = monthOptions.find(opt => opt.value === month)?.label || month;
+      if (!groups[monthName]) {
+        groups[monthName] = [];
+      }
+      groups[monthName].push(person);
+    });
+    
+    // Sort groups by month order
+    const sortedGroups: { monthName: string; people: BirthdayPerson[] }[] = [];
+    monthOptions.forEach(monthOption => {
+      if (groups[monthOption.label]) {
+        sortedGroups.push({
+          monthName: monthOption.label,
+          people: groups[monthOption.label].sort((a, b) => {
+            const dayA = parseInt(a.date.split('/')[0]);
+            const dayB = parseInt(b.date.split('/')[0]);
+            return dayA - dayB;
+          })
+        });
+      }
+    });
+    
+    return sortedGroups;
+  }, [filteredData, monthOptions]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -197,7 +223,7 @@ const Aniversariantes = () => {
                     setNameFilter("");
                     setDepartmentFilter("all");
                     setDayFilter("all");
-                    setMonthFilter("all");
+                    setMonthFilter(currentMonthFormatted);
                   }}
                 >
                   Limpar filtros
@@ -207,86 +233,55 @@ const Aniversariantes = () => {
           </CardContent>
         </Card>
 
-        <div className="grid gap-8">
-          {/* Current Month Birthdays */}
-          <Card className="tile-card">
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <Calendar className="h-6 w-6 text-primary mr-3" />
-                Aniversários deste mês
-                <Badge variant="default" className="ml-auto">
-                  {currentMonth.length}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {currentMonth.map((person, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors border border-border/50">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={person.avatar} />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {person.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-base truncate">{person.name}</p>
-                      <p className="text-sm text-muted-foreground">{person.department}</p>
-                      <div className="flex items-center mt-1">
-                        <Gift className="h-3 w-3 text-primary mr-1" />
-                        <span className="text-xs text-primary font-medium">{person.fullDate}</span>
-                        {person.age && (
-                          <span className="text-xs text-muted-foreground ml-2">
-                            ({person.age} anos)
-                          </span>
-                        )}
+        <div className="space-y-8">
+          {groupedByMonth.length === 0 ? (
+            <Card className="tile-card">
+              <CardContent className="text-center py-8">
+                <p className="text-muted-foreground">Nenhum colaborador encontrado com os filtros aplicados.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            groupedByMonth.map((group, groupIndex) => (
+              <Card key={groupIndex} className="tile-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-xl">
+                    <Calendar className="h-6 w-6 text-primary mr-3" />
+                    {group.monthName}
+                    <Badge variant="default" className="ml-auto">
+                      {group.people.length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {group.people.map((person, index) => (
+                      <div key={index} className="flex items-center space-x-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors border border-border/50">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={person.avatar} />
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            {person.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-base truncate">{person.name}</p>
+                          <p className="text-sm text-muted-foreground">{person.department}</p>
+                          <div className="flex items-center mt-1">
+                            <Gift className="h-3 w-3 text-primary mr-1" />
+                            <span className="text-xs text-primary font-medium">{person.fullDate}</span>
+                            {person.age && (
+                              <span className="text-xs text-muted-foreground ml-2">
+                                ({person.age} anos)
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Upcoming Birthdays */}
-          <Card className="tile-card">
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <Calendar className="h-6 w-6 text-secondary mr-3" />
-                Próximos aniversários
-                <Badge variant="outline" className="ml-auto">
-                  {upcomingBirthdays.length}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {upcomingBirthdays.map((person, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-4 rounded-lg bg-card hover:bg-muted/30 transition-colors border border-border/50">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={person.avatar} />
-                      <AvatarFallback className="bg-secondary/10 text-secondary">
-                        {person.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-base truncate">{person.name}</p>
-                      <p className="text-sm text-muted-foreground">{person.department}</p>
-                      <div className="flex items-center mt-1">
-                        <Gift className="h-3 w-3 text-secondary mr-1" />
-                        <span className="text-xs text-secondary font-medium">{person.fullDate}</span>
-                        {person.age && (
-                          <span className="text-xs text-muted-foreground ml-2">
-                            ({person.age} anos)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </main>
     </div>
