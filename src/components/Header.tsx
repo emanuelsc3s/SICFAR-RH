@@ -11,7 +11,7 @@ const Header = () => {
         {/* Logo e Title */}
         <div className="flex items-center space-x-4">
           <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1">
-            <img src="/src/assets/farmace-logo.png" alt="Farmace Logo" className="h-8 w-auto object-contain" />
+            <img src="/farmace-logo.png" alt="Farmace Logo" className="h-8 w-auto object-contain" />
           </div>
           <div>
             <h1 className="text-xl font-semibold text-foreground">Portal Corporativo</h1>
