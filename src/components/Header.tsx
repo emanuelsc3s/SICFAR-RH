@@ -10,7 +10,7 @@ const Header = () => {
       <div className="flex items-center justify-between">
         {/* Logo e Title */}
         <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1">
+          <div className="bg-white rounded-lg flex items-center justify-center p-1" style={{width: '149.98px', height: '68.97px'}}>
             <img src="/farmace-logo.png" alt="Farmace Logo" className="object-contain" style={{width: '149.98px', height: '68.97px'}} />
           </div>
           <div>
