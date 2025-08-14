@@ -30,7 +30,7 @@ const BeneficioFaturas = () => {
   const faturas = [
     {
       id: 1,
-      parceiro: "Restaurante Central",
+      parceiro: "Farmacia Santa Cecilia",
       referencia: "2024-01",
       qtdVouchers: 3,
       valorTotal: 1500.00,
@@ -39,7 +39,7 @@ const BeneficioFaturas = () => {
     },
     {
       id: 2,
-      parceiro: "Farmácia Saúde",
+      parceiro: "Farmacia Gentil",
       referencia: "2024-01",
       qtdVouchers: 8,
       valorTotal: 2400.00,
@@ -48,7 +48,7 @@ const BeneficioFaturas = () => {
     },
     {
       id: 3,
-      parceiro: "Academia Fit",
+      parceiro: "DISTRIBUIDORA GÁS BUTANO",
       referencia: "2024-01",
       qtdVouchers: 5,
       valorTotal: 750.00,
