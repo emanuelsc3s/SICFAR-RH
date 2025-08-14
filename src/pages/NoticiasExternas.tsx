@@ -110,7 +110,7 @@ const NoticiasExternas = () => {
         source: "Estadão Saúde",
         category: "Medicamentos",
         contentSnippet: "Lançamento marca um passo inédito da indústria farmacêutica brasileira no combate à obesidade. A farmacêutica EMS prevê lançar em agosto as primeiras versões brasileiras de canetas para tratamento de diabetes tipo 2 e obesidade com produção autorizada pela ANVISA...",
-        imageUrl: "https://images.unsplash.com/photo-1559181567-c3190ca9959b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        imageUrl: "https://images.unsplash.com/photo-1576671081837-49000212a370?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         readTime: "3 min"
       },
       {
