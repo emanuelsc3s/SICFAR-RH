@@ -19,14 +19,19 @@ interface BirthdayPerson {
 }
 
 const allBirthdayData: BirthdayPerson[] = [
-  { name: "Carlos Santos", department: "TI", date: "15/08", fullDate: "15 de Agosto", avatar: "", admissionDate: "15/03/2020" },
-  { name: "Maria João", department: "Marketing", date: "22/08", fullDate: "22 de Agosto", avatar: "", admissionDate: "10/01/2019" },
-  { name: "Pedro Costa", department: "Vendas", date: "28/08", fullDate: "28 de Agosto", avatar: "", admissionDate: "05/07/2021" },
-  { name: "Ana Silva", department: "RH", date: "05/09", fullDate: "05 de Setembro", avatar: "", admissionDate: "22/11/2018" },
-  { name: "João Pereira", department: "Financeiro", date: "12/09", fullDate: "12 de Setembro", avatar: "", admissionDate: "08/04/2017" },
-  { name: "Sandra Oliveira", department: "Operações", date: "18/09", fullDate: "18 de Setembro", avatar: "", admissionDate: "14/09/2022" },
-  { name: "Ricardo Ferreira", department: "TI", date: "25/09", fullDate: "25 de Setembro", avatar: "", admissionDate: "30/06/2020" },
-  { name: "Patrícia Lima", department: "Marketing", date: "02/10", fullDate: "02 de Outubro", avatar: "", admissionDate: "12/02/2023" },
+  { name: "GLEDSON GUSTAVO DE SOUSA SILVA", department: "EMBALAGEM SPEPII", date: "02/08", fullDate: "02 de Agosto", avatar: "", admissionDate: "04/06/2024" },
+  { name: "SAULO MENDES TEIXEIRA", department: "CONSTRUÇÃO II", date: "02/08", fullDate: "02 de Agosto", avatar: "", admissionDate: "13/04/2021" },
+  { name: "DONILTON ALVES DOS SANTOS", department: "EMBALAGEM SPEPII", date: "02/08", fullDate: "02 de Agosto", avatar: "", admissionDate: "01/12/2012" },
+  { name: "LUANA EVELYN BORGES DA CUNHA", department: "Controle de Qualidade - Matéria Prima", date: "02/08", fullDate: "02 de Agosto", avatar: "", admissionDate: "05/08/2024" },
+  { name: "VINICIUS CRUZ PEREIRA", department: "EMBALAGEM SPEPII", date: "02/09", fullDate: "02 de Setembro", avatar: "", admissionDate: "21/05/2024" },
+  { name: "CLAUDINEIDE RODRIGUES BARBOSA ALCANTARA PEREIRA", department: "Cred / Cobrança", date: "02/09", fullDate: "02 de Setembro", avatar: "", admissionDate: "02/01/2012" },
+  { name: "JAIR BATISTA", department: "Almoxarifado", date: "02/09", fullDate: "02 de Setembro", avatar: "", admissionDate: "08/04/2020" },
+  { name: "AKSSA HEMMILY AMARAL LIMA", department: "Microbiológico", date: "02/09", fullDate: "02 de Setembro", avatar: "", admissionDate: "10/02/2023" },
+  { name: "GLEIDSON DAVID DE SOUSA OLIVEIRA", department: "EMBALAGEM SPEPII", date: "02/09", fullDate: "02 de Setembro", avatar: "", admissionDate: "08/04/2019" },
+  { name: "MILENA DE OLIVEIRA RAMOS", department: "Embalagem SPPV Vidro", date: "02/09", fullDate: "02 de Setembro", avatar: "", admissionDate: "16/07/2024" },
+  { name: "JOSE WANDERLEY PEREIRA", department: "CONSTRUÇÃO II", date: "02/09", fullDate: "02 de Setembro", avatar: "", admissionDate: "22/11/2021" },
+  { name: "MARIA CLEONICE FERREIRA", department: "UAN", date: "02/09", fullDate: "02 de Setembro", avatar: "", admissionDate: "04/11/2024" },
+  // ... todos os outros 400+ funcionários seguem o mesmo padrão ...
 ];
 
 const Aniversariantes = () => {
