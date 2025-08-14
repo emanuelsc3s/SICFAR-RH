@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 const PortalBeneficio = () => {
+  const navigate = useNavigate();
   const [activeButton, setActiveButton] = useState("Início");
 
   const navigationButtons = [
@@ -111,9 +113,13 @@ const PortalBeneficio = () => {
           <p className="text-gray-600 mb-6">
             Gerencie seus vouchers de benefícios de forma simples e rápida
           </p>
-          <Button style={{
-          backgroundColor: "#1E3A8A"
-        }} className="text-white hover:opacity-90">
+          <Button 
+            style={{
+              backgroundColor: "#1E3A8A"
+            }} 
+            className="text-white hover:opacity-90"
+            onClick={() => navigate('/solicitarbeneficio')}
+          >
             <Gift className="w-4 h-4 mr-2" />
             Solicitar Novo Voucher
           </Button>
