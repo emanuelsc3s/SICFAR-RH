@@ -143,27 +143,98 @@ const SolicitarBeneficio = () => {
             width: 100%;
             page-break-inside: avoid;
             break-inside: avoid;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
           }
           .print-hidden {
             display: none !important;
           }
-          .grid {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 1rem !important;
+          .voucher-header {
+            background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px 12px 0 0;
+            margin-bottom: 0;
+          }
+          .voucher-body {
+            background: white;
+            border: 2px solid #E5E7EB;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            padding: 2rem;
+          }
+          .voucher-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-top: 1.5rem;
+          }
+          .voucher-section {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+          }
+          .voucher-qr-section {
+            text-align: center;
+            background: white;
+            border: 2px dashed #9CA3AF;
+            border-radius: 12px;
+            padding: 1.5rem;
           }
           .voucher-qr img {
-            max-width: 140px !important;
+            max-width: 160px !important;
             height: auto !important;
+            margin: 0 auto;
           }
-          .space-y-4 > * + * {
-            margin-top: 0.75rem !important;
+          .voucher-code {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            background: #EFF6FF;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border-left: 4px solid #2563EB;
           }
-          .voucher-info {
-            font-size: 14px !important;
+          .voucher-logo {
+            max-width: 120px;
+            height: auto;
+          }
+          .voucher-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+          }
+          .voucher-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            margin: 0.25rem 0 0 0;
+          }
+          .voucher-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+          }
+          .voucher-value {
+            font-size: 16px;
+            color: #111827;
+            font-weight: 600;
+          }
+          .program-item {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #E5E7EB;
+          }
+          .program-item:last-child {
+            border-bottom: none;
           }
           @page {
-            margin: 1cm;
+            margin: 0.5cm;
             size: A4;
           }
         }
@@ -390,81 +461,118 @@ const SolicitarBeneficio = () => {
         {/* Step 4: Voucher Generated */}
         {currentStep === 4 && voucher && (
           <div className="voucher-container">
-            <Card className="mb-8">
+            {/* Header com logomarca para impressão */}
+            <div className="voucher-header">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <img 
+                    src="/farmace-logo.png" 
+                    alt="Farmace Logo" 
+                    className="voucher-logo"
+                  />
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <h1 className="voucher-title">VOUCHER CORPORATIVO</h1>
+                  <p className="voucher-subtitle">Sistema de Benefícios</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Corpo do voucher */}
+            <div className="voucher-body">
+              {/* Informações principais */}
+              <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '1.5rem' }}>
+                  <div>
+                    <div className="voucher-label">ID do Voucher</div>
+                    <div className="voucher-code">{voucher.id}</div>
+                  </div>
+                  <div>
+                    <div className="voucher-label">Código Verificador</div>
+                    <div className="voucher-code">{voucher.verificador}</div>
+                  </div>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                  <div>
+                    <div className="voucher-label">Data de Geração</div>
+                    <div className="voucher-value">{voucher.dataGeracao}</div>
+                  </div>
+                  <div>
+                    <div className="voucher-label">Urgência</div>
+                    <div className="voucher-value" style={{ textTransform: 'capitalize' }}>{voucher.urgencia}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid principal */}
+              <div className="voucher-grid">
+                {/* Programas e informações */}
+                <div>
+                  <div className="voucher-section">
+                    <div className="voucher-label">Programas Incluídos</div>
+                    {voucher.programas.map((programa, index) => {
+                      const programaData = programasDisponiveis.find(p => p.title === programa);
+                      return (
+                        <div key={index} className="program-item">
+                          <div>
+                            <div style={{ fontWeight: '600', color: '#111827' }}>{programa}</div>
+                            <div style={{ fontSize: '14px', color: '#6B7280' }}>{programaData?.description}</div>
+                          </div>
+                          <div style={{ fontWeight: '700', color: '#059669' }}>{programaData?.value}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {voucher.informacoes && (
+                    <div className="voucher-section">
+                      <div className="voucher-label">Informações Adicionais</div>
+                      <div className="voucher-value" style={{ whiteSpace: 'pre-wrap' }}>{voucher.informacoes}</div>
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: '2rem', padding: '1rem', background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '600', color: '#92400E', marginBottom: '0.5rem' }}>⚠️ IMPORTANTE</div>
+                    <div style={{ fontSize: '14px', color: '#92400E' }}>
+                      Este voucher é válido apenas para os programas especificados e deve ser apresentado junto com um documento de identificação válido.
+                    </div>
+                  </div>
+                </div>
+
+                {/* QR Code */}
+                <div className="voucher-qr-section">
+                  <div className="voucher-label" style={{ marginBottom: '1rem' }}>QR Code de Validação</div>
+                  <img src={voucher.qrCode} alt="QR Code do Voucher" style={{ margin: '0 auto 1rem auto' }} />
+                  <div style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center' }}>
+                    Escaneie para validar o voucher
+                  </div>
+                  
+                  <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#EFF6FF', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '600', color: '#1E40AF', marginBottom: '0.5rem' }}>Status do Voucher</div>
+                    <div style={{ fontSize: '14px', color: '#1E40AF', fontWeight: '600' }}>✓ ATIVO</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rodapé */}
+              <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '2px solid #E5E7EB', textAlign: 'center' }}>
+                <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                  Documento gerado automaticamente em {new Date().toLocaleString('pt-BR')} | Sistema Farmace
+                </div>
+              </div>
+            </div>
+
+            {/* Tela de sucesso (apenas para visualização) */}
+            <Card className="mb-8 print-hidden">
               <CardContent className="p-6">
                 <div className="text-center mb-6">
-                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 print-hidden" />
+                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Voucher Gerado com Sucesso!</h2>
-                  <p className="text-gray-600 print-hidden">Seu voucher foi criado e está pronto para uso.</p>
+                  <p className="text-gray-600">Seu voucher foi criado e está pronto para uso.</p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Informações do Voucher */}
-                  <div className="space-y-4 voucher-info">
-                    <div className="bg-blue-50 p-4 rounded-lg border">
-                      <h3 className="font-semibold text-gray-900 mb-2">ID do Voucher</h3>
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-lg">{voucher.id}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => copyToClipboard(voucher.id)}
-                          className="print-hidden"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="bg-yellow-50 p-4 rounded-lg border">
-                      <h3 className="font-semibold text-gray-900 mb-2">Código Verificador</h3>
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-lg">{voucher.verificador}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => copyToClipboard(voucher.verificador)}
-                          className="print-hidden"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="font-semibold text-gray-900 mb-3">Programas Incluídos</h3>
-                      <div className="space-y-2">
-                        {voucher.programas.map((programa, index) => {
-                          const programaData = programasDisponiveis.find(p => p.title === programa);
-                          return (
-                            <div key={index} className="flex justify-between items-center">
-                              <span className="text-gray-700">{programa}</span>
-                              <span className="font-semibold">{programaData?.value}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="font-semibold text-gray-900 mb-2">Data de Geração</h3>
-                      <p className="text-gray-700">{voucher.dataGeracao}</p>
-                    </div>
-                  </div>
-
-                  {/* QR Code */}
-                  <div className="flex flex-col items-center justify-center voucher-qr">
-                    <h3 className="font-semibold text-gray-900 mb-4">QR Code do Voucher</h3>
-                    <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
-                      <img src={voucher.qrCode} alt="QR Code do Voucher" className="mx-auto" />
-                    </div>
-                    <p className="text-sm text-gray-600 mt-2 text-center">
-                      Escaneie este QR Code para validar o voucher
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-gray-200 print-hidden">
+                <div className="mt-6 pt-6 border-t border-gray-200">
                   <div className="flex justify-center space-x-4">
                     <Button
                       variant="outline"
