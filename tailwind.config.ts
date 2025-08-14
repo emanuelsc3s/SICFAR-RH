@@ -99,11 +99,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'shine': {
+					'0%': { transform: 'translateX(-100%) translateY(-100%) rotate(30deg)' },
+					'100%': { transform: 'translateX(100%) translateY(100%) rotate(30deg)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'shine': 'shine 3s ease-in-out infinite'
 			}
 		}
 	},
