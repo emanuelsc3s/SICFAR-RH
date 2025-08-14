@@ -173,14 +173,15 @@ Data de Geração: ${new Date().toLocaleString('pt-BR')}
   return (
     <div className="min-h-screen bg-background">
       {/* Header Navigation */}
-      <header className="text-white px-6 py-2 print-hidden bg-primary">
+      <header className="text-white px-6 py-2 print-hidden" style={{
+        backgroundColor: "#1E3A8A"
+      }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <img 
-              src="/farmace-logo.png" 
-              alt="Farmace Logo" 
-              className="object-contain h-8" 
-            />
+            <img src="/farmace-logo.png" alt="Farmace Logo" className="object-contain h-8" style={{
+              width: "149.98px",
+              height: "68.97px"
+            }} />
           </div>
           
           <nav className="hidden md:flex items-center space-x-2 ml-12">
