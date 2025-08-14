@@ -24,6 +24,8 @@ const SolicitarBeneficio = () => {
   const handleNextStep = () => {
     if (currentStep === 1 && selectedPrograms.length > 0) {
       setCurrentStep(2);
+    } else if (currentStep === 2) {
+      setCurrentStep(3);
     }
   };
 
@@ -245,6 +247,49 @@ const SolicitarBeneficio = () => {
           </Card>
         )}
 
+        {/* Step 3: Review */}
+        {currentStep === 3 && (
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Revisar Solicitação</h2>
+              <div className="space-y-6">
+                {/* Programas Selecionados */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Programa Selecionado</h3>
+                  <div className="space-y-3">
+                    {selectedPrograms.map((programName, index) => {
+                      const programa = programasDisponiveis.find(p => p.title === programName);
+                      if (!programa) return null;
+                      
+                      return (
+                        <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                          <h4 className="font-semibold text-gray-900">{programa.title}</h4>
+                          <p className="text-sm text-gray-600 mt-1">{programa.description}</p>
+                          <p className="font-bold text-gray-900 mt-2">Valor: {programa.value}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Urgência */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Urgência</h3>
+                  <p className="text-gray-700 capitalize">{urgencia || "Normal"}</p>
+                </div>
+
+                {/* Informações Adicionais */}
+                {informacoesAdicionais && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Informações Adicionais</h3>
+                    <p className="text-gray-700 whitespace-pre-wrap">{informacoesAdicionais}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Navigation Buttons */}
         <div className="flex justify-between">
           <Button 
@@ -264,7 +309,7 @@ const SolicitarBeneficio = () => {
             onClick={handleNextStep}
             disabled={currentStep === 1 && selectedPrograms.length === 0}
           >
-            <span>Próximo</span>
+            <span>{currentStep === 3 ? "Finalizar" : "Próximo"}</span>
             <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
