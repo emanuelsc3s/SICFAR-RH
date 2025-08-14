@@ -25,7 +25,7 @@ export default function ChatLisAI() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Carrega configurações do localStorage
+  // Carrega configurações do localStorage e gera saudação inicial
   useEffect(() => {
     const savedApiKey = localStorage.getItem("openai_api_key");
     const savedTrainingData = localStorage.getItem("lis_training_data");
@@ -33,14 +33,67 @@ export default function ChatLisAI() {
     if (savedApiKey) setApiKey(savedApiKey);
     if (savedTrainingData) setTrainingData(savedTrainingData);
 
-    // Mensagem inicial da Lis
-    const initialMessage: Message = {
-      id: "initial",
-      type: "assistant",
-      content: "Olá! Eu sou a Lis, sua assistente virtual. Como posso ajudá-lo hoje?",
-      timestamp: new Date()
+    // Gera saudação inicial da IA
+    const generateInitialGreeting = async () => {
+      if (!savedApiKey) {
+        // Fallback se não tiver API key
+        const fallbackMessage: Message = {
+          id: "initial",
+          type: "assistant",
+          content: "Olá! Eu sou a Lis, sua assistente virtual. Configure sua API key para começar!",
+          timestamp: new Date()
+        };
+        setMessages([fallbackMessage]);
+        return;
+      }
+
+      try {
+        const systemPrompt = savedTrainingData 
+          ? `Você é a Lis, uma assistente virtual. Use as seguintes informações como base de conhecimento: ${savedTrainingData}`
+          : "Você é a Lis, uma assistente virtual prestativa e amigável.";
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${savedApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4.1-2025-04-14',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: 'Diga um oi de boas-vindas curto e amigável para iniciar nossa conversa.' }
+            ],
+            max_tokens: 150,
+            temperature: 0.7,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const initialMessage: Message = {
+            id: "initial",
+            type: "assistant",
+            content: data.choices[0].message.content,
+            timestamp: new Date()
+          };
+          setMessages([initialMessage]);
+        } else {
+          throw new Error('Erro na API');
+        }
+      } catch (error) {
+        // Fallback se houver erro
+        const fallbackMessage: Message = {
+          id: "initial",
+          type: "assistant",
+          content: "Olá! Eu sou a Lis, sua assistente virtual. Como posso ajudá-lo hoje?",
+          timestamp: new Date()
+        };
+        setMessages([fallbackMessage]);
+      }
     };
-    setMessages([initialMessage]);
+
+    generateInitialGreeting();
   }, []);
 
   // Auto scroll para última mensagem e foco no input
