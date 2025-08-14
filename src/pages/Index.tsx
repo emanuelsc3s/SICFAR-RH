@@ -3,6 +3,7 @@ import {
   Settings, Shield, BarChart3, BookOpen, HelpCircle, 
   Users, UserCheck, Bot
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import Header from "@/components/Header";
 import TileCard from "@/components/TileCard";
@@ -13,6 +14,15 @@ import QuickStats from "@/components/QuickStats";
 import SystemStatus from "@/components/SystemStatus";
 
 const Index = () => {
+  const navigate = useNavigate();
+
+  const handleTileClick = (title: string) => {
+    if (title === "Manual do Gestor") {
+      navigate("/manualgestor");
+    } else {
+      console.log(`Clicked on ${title}`);
+    }
+  };
   const mainTiles = [
     {
       title: "Gestão de Dados",
@@ -108,7 +118,7 @@ const Index = () => {
                   description={tile.description}
                   icon={tile.icon}
                   gradient={tile.gradient}
-                  onClick={() => console.log(`Clicked on ${tile.title}`)}
+                  onClick={() => handleTileClick(tile.title)}
                 />
               ))}
             </div>
