@@ -374,7 +374,10 @@ const ManualGestor = () => {
           </div>
           
           <div className="flex items-center space-x-3">
-            
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </Button>
             <Button variant="outline" size="sm">
               <Share2 className="h-4 w-4 mr-2" />
               Compartilhar
