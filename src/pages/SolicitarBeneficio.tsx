@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Home, Plus, Users, QrCode, Download, DollarSign, Eye, ArrowLeft, ArrowRight, Flame, Pill, Car, Heart, Bus, Fuel } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
+import QRCode from "qrcode";
 
 const SolicitarBeneficio = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const SolicitarBeneficio = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedBeneficios, setSelectedBeneficios] = useState<string[]>([]);
   const [showVoucher, setShowVoucher] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   
   // Form data for step 2
   const [formData, setFormData] = useState({
@@ -108,7 +110,32 @@ const SolicitarBeneficio = () => {
     return `VOU${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`;
   };
 
+  const generateQRCode = async (voucherNumber: string) => {
+    const qrData = JSON.stringify({
+      voucher: voucherNumber,
+      beneficios: selectedBeneficios,
+      data: new Date().toISOString(),
+      empresa: "Farmace Benefícios"
+    });
+    
+    try {
+      const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#1E3A8A',
+          light: '#FFFFFF'
+        }
+      });
+      setQrCodeUrl(qrCodeDataUrl);
+    } catch (error) {
+      console.error('Erro ao gerar QR Code:', error);
+    }
+  };
+
   const handleConfirmSolicitation = () => {
+    const voucherNumber = generateVoucherNumber();
+    generateQRCode(voucherNumber);
     setShowVoucher(true);
   };
 
@@ -197,31 +224,52 @@ const SolicitarBeneficio = () => {
 
               {/* Main Voucher Info */}
               <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-6 border-2 border-blue-200 mb-8">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2">
                     <p className="text-sm text-gray-600 mb-1">Número do Voucher</p>
                     <p className="text-3xl font-bold text-blue-600">{generateVoucherNumber()}</p>
                     <p className="text-sm text-gray-500 mt-1">
                       Este é o seu código de identificação
                     </p>
+                    
+                    <div className="mt-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Total de benefícios:</span>
+                        <span className="font-semibold text-gray-900">{selectedBeneficios.length}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Status:</span>
+                        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                          Aprovado
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Validade:</span>
+                        <span className="font-semibold text-gray-900">
+                          {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-BR")}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Total de benefícios:</span>
-                      <span className="font-semibold text-gray-900">{selectedBeneficios.length}</span>
+                  
+                  {/* QR Code Section */}
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                      {qrCodeUrl ? (
+                        <img 
+                          src={qrCodeUrl} 
+                          alt="QR Code do Voucher" 
+                          className="w-40 h-40"
+                        />
+                      ) : (
+                        <div className="w-40 h-40 bg-gray-100 flex items-center justify-center rounded-lg">
+                          <QrCode className="w-16 h-16 text-gray-400" />
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Status:</span>
-                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                        Aprovado
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Validade:</span>
-                      <span className="font-semibold text-gray-900">
-                        {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-BR")}
-                      </span>
-                    </div>
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      Escaneie para validar
+                    </p>
                   </div>
                 </div>
               </div>
