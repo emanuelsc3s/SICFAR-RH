@@ -59,7 +59,7 @@ const BirthdayCard = () => {
             <Avatar className="h-10 w-10">
               <AvatarImage src={person.avatar} />
               <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                {person.name.split(' ').map(n => n[0]).join('')}
+                {person.name.split(' ').slice(0, 2).map(n => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
