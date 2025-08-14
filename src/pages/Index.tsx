@@ -23,6 +23,8 @@ const Index = () => {
       navigate("/faq");
     } else if (title === "Lis AI") {
       navigate("/chatlisai");
+    } else if (title === "Benefícios e Remuneração") {
+      navigate("/portalbeneficio");
     } else {
       console.log(`Clicked on ${title}`);
     }
