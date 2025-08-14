@@ -47,7 +47,7 @@
     --ring: 223 83% 33%;
 
     /* Corporate Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 30%, hsl(var(--primary-light)) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 70%, hsl(var(--primary-light)) 100%);
     --gradient-subtle: linear-gradient(135deg, hsl(var(--primary-subtle)) 0%, hsl(var(--accent)) 100%);
     
     /* Shadows */
