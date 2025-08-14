@@ -70,7 +70,7 @@ const PortalBeneficio = () => {
   }];
   return <div className="min-h-screen bg-background">
       {/* Header Navigation */}
-      <header className="text-white px-6 py-4" style={{
+      <header className="text-white px-6 py-2" style={{
       backgroundColor: "#1E3A8A"
     }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
