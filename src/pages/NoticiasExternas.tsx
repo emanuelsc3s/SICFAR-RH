@@ -97,68 +97,129 @@ const NoticiasExternas = () => {
     return "Saúde Geral";
   };
 
-  // Função para buscar notícias de um feed RSS via proxy
-  const fetchRSSFeed = async (source: RSSSource): Promise<NewsItem[]> => {
-    try {
-      // Usando um proxy CORS para acessar os feeds RSS
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(source.url)}`;
-      const response = await fetch(proxyUrl);
-      const data = await response.json();
-      
-      if (!data.contents) {
-        console.warn(`Não foi possível obter conteúdo de ${source.name}`);
-        return [];
+// Dados mock de notícias farmacêuticas brasileiras
+  const generateMockNews = (): NewsItem[] => {
+    const mockNews: NewsItem[] = [
+      {
+        title: "ANVISA aprova novo medicamento para tratamento de diabetes tipo 2",
+        link: "#",
+        pubDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        description: "A Agência Nacional de Vigilância Sanitária (ANVISA) aprovou registro de novo medicamento para diabetes desenvolvido por laboratório brasileiro.",
+        source: "G1 Ciência e Saúde",
+        category: "Regulatório",
+        contentSnippet: "A Agência Nacional de Vigilância Sanitária (ANVISA) aprovou registro de novo medicamento para diabetes desenvolvido por laboratório brasileiro..."
+      },
+      {
+        title: "Ministério da Saúde amplia distribuição de medicamentos genéricos",
+        link: "#",
+        pubDate: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+        description: "Programa nacional de acesso a medicamentos genéricos será expandido para mais 200 municípios brasileiros este ano.",
+        source: "Estadão Saúde",
+        category: "Medicamentos",
+        contentSnippet: "Programa nacional de acesso a medicamentos genéricos será expandido para mais 200 municípios brasileiros este ano..."
+      },
+      {
+        title: "Nova vacina contra COVID-19 desenvolvida no Brasil entra em fase de testes",
+        link: "#",
+        pubDate: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        description: "Instituto Butantan inicia ensaios clínicos de nova vacina nacional contra COVID-19 com tecnologia inovadora.",
+        source: "R7 Notícias",
+        category: "Vacinas",
+        contentSnippet: "Instituto Butantan inicia ensaios clínicos de nova vacina nacional contra COVID-19 com tecnologia inovadora..."
+      },
+      {
+        title: "Pesquisa brasileira desenvolve novo tratamento para câncer de mama",
+        link: "#",
+        pubDate: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+        description: "Estudo clínico multicêntrico testa eficácia de nova terapia desenvolvida em universidade paulista para oncologia.",
+        source: "Estadão Ciência",
+        category: "Pesquisa",
+        contentSnippet: "Estudo clínico multicêntrico testa eficácia de nova terapia desenvolvida em universidade paulista para oncologia..."
+      },
+      {
+        title: "ANVISA suspende lote de medicamento por contaminação",
+        link: "#",
+        pubDate: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+        description: "Agência determina recolhimento imediato de lotes de anti-inflamatório após detecção de substâncias não autorizadas.",
+        source: "G1 Ciência e Saúde",
+        category: "Regulatório",
+        contentSnippet: "Agência determina recolhimento imediato de lotes de anti-inflamatório após detecção de substâncias não autorizadas..."
+      },
+      {
+        title: "Laboratório nacional lança primeiro biológico para artrite reumatoide",
+        link: "#",
+        pubDate: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
+        description: "Medicamento biológico desenvolvido no Brasil oferece nova opção terapêutica para pacientes com artrite reumatoide.",
+        source: "Estadão Saúde",
+        category: "Medicamentos",
+        contentSnippet: "Medicamento biológico desenvolvido no Brasil oferece nova opção terapêutica para pacientes com artrite reumatoide..."
+      },
+      {
+        title: "SUS incorpora novo tratamento para hepatite C",
+        link: "#",
+        pubDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        description: "Sistema Único de Saúde passa a oferecer gratuitamente novo medicamento para hepatite C com eficácia de 95%.",
+        source: "R7 Notícias",
+        category: "Saúde Geral",
+        contentSnippet: "Sistema Único de Saúde passa a oferecer gratuitamente novo medicamento para hepatite C com eficácia de 95%..."
+      },
+      {
+        title: "Pesquisadores brasileiros descobrem novo princípio ativo antiviral",
+        link: "#",
+        pubDate: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString(),
+        description: "Estudo da UNICAMP identifica composto natural com potencial para desenvolvimento de novos antivirais.",
+        source: "Estadão Ciência",
+        category: "Pesquisa",
+        contentSnippet: "Estudo da UNICAMP identifica composto natural com potencial para desenvolvimento de novos antivirais..."
       }
+    ];
 
-      // Parse simples do XML RSS
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(data.contents, 'text/xml');
-      const items = xmlDoc.querySelectorAll('item');
-      
-      const newsItems: NewsItem[] = [];
-      
-      items.forEach(item => {
-        const title = item.querySelector('title')?.textContent || '';
-        const link = item.querySelector('link')?.textContent || '';
-        const pubDate = item.querySelector('pubDate')?.textContent || '';
-        const description = item.querySelector('description')?.textContent || '';
-        
-        // Filtrar apenas conteúdo farmacêutico relevante
-        if (isPharmaceuticalContent(title + " " + description)) {
-          newsItems.push({
-            title: title.trim(),
-            link: link.trim(),
-            pubDate,
-            description: description.replace(/<[^>]*>/g, '').trim(), // Remove HTML tags
-            source: source.name,
-            category: getContentCategory(title, description),
-            contentSnippet: description.replace(/<[^>]*>/g, '').substring(0, 200) + '...'
-          });
-        }
-      });
-      
-      return newsItems;
+    return mockNews;
+  };
+
+  // Função para salvar dados no localStorage
+  const saveToLocalStorage = (key: string, data: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
     } catch (error) {
-      console.error(`Erro ao buscar feed ${source.name}:`, error);
-      return [];
+      console.error('Erro ao salvar no localStorage:', error);
     }
   };
 
-  // Função para buscar todas as notícias
+  // Função para carregar dados do localStorage
+  const loadFromLocalStorage = (key: string, defaultValue: any = null) => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : defaultValue;
+    } catch (error) {
+      console.error('Erro ao carregar do localStorage:', error);
+      return defaultValue;
+    }
+  };
+
+  // Função para buscar todas as notícias (usando dados mock)
   const fetchAllNews = async () => {
     setLoading(true);
     try {
-      const allNewsPromises = rssSources.map(source => fetchRSSFeed(source));
-      const allNewsArrays = await Promise.all(allNewsPromises);
+      // Simular delay de carregamento
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Combinar e ordenar por data
-      const combinedNews = allNewsArrays.flat().sort((a, b) => 
-        new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-      );
+      // Verificar se há dados salvos no localStorage
+      const savedNews = loadFromLocalStorage('farmace_noticias_externas');
       
-      setNews(combinedNews);
-      setFilteredNews(combinedNews);
+      let newsData: NewsItem[];
+      if (savedNews && savedNews.length > 0) {
+        newsData = savedNews;
+      } else {
+        // Gerar dados mock e salvar no localStorage
+        newsData = generateMockNews();
+        saveToLocalStorage('farmace_noticias_externas', newsData);
+      }
+      
+      setNews(newsData);
+      setFilteredNews(newsData);
       setLastUpdate(new Date());
+      saveToLocalStorage('farmace_last_update', new Date().toISOString());
     } catch (error) {
       console.error('Erro ao buscar notícias:', error);
     } finally {
@@ -188,10 +249,38 @@ const NoticiasExternas = () => {
     setFilteredNews(filtered);
   }, [searchTerm, selectedSource, selectedCategory, news]);
 
-  // Buscar notícias ao carregar o componente
+  // Buscar notícias ao carregar o componente e carregar preferências do localStorage
   useEffect(() => {
     fetchAllNews();
+    
+    // Carregar preferências de filtros do localStorage
+    const savedSearchTerm = loadFromLocalStorage('farmace_search_term', '');
+    const savedSource = loadFromLocalStorage('farmace_selected_source', 'all');
+    const savedCategory = loadFromLocalStorage('farmace_selected_category', 'all');
+    
+    setSearchTerm(savedSearchTerm);
+    setSelectedSource(savedSource);
+    setSelectedCategory(savedCategory);
+    
+    // Carregar última data de atualização
+    const savedLastUpdate = loadFromLocalStorage('farmace_last_update');
+    if (savedLastUpdate) {
+      setLastUpdate(new Date(savedLastUpdate));
+    }
   }, []);
+
+  // Salvar preferências de filtros no localStorage quando alteradas
+  useEffect(() => {
+    saveToLocalStorage('farmace_search_term', searchTerm);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    saveToLocalStorage('farmace_selected_source', selectedSource);
+  }, [selectedSource]);
+
+  useEffect(() => {
+    saveToLocalStorage('farmace_selected_category', selectedCategory);
+  }, [selectedCategory]);
 
   const formatDate = (dateString: string) => {
     try {
