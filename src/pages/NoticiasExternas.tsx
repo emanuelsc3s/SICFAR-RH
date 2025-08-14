@@ -110,7 +110,7 @@ const NoticiasExternas = () => {
         source: "Estadão Saúde",
         category: "Medicamentos",
         contentSnippet: "Lançamento marca um passo inédito da indústria farmacêutica brasileira no combate à obesidade. A farmacêutica EMS prevê lançar em agosto as primeiras versões brasileiras de canetas para tratamento de diabetes tipo 2 e obesidade com produção autorizada pela ANVISA...",
-        imageUrl: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        imageUrl: "https://images.unsplash.com/photo-1586549132018-311b2b346606?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         readTime: "3 min"
       },
       {
@@ -121,7 +121,7 @@ const NoticiasExternas = () => {
         source: "Potiguar Notícias",
         category: "Regulatório",
         contentSnippet: "A Fundação Oswaldo Cruz (Fiocruz) e a farmacêutica EMS firmaram dois acordos de parceria para a produção de liraglutida e de semaglutida, princípios ativos de medicamentos agonistas GLP-1, popularmente conhecidos como canetas emagrecedoras...",
-        imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        imageUrl: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         readTime: "4 min"
       },
       {
@@ -132,7 +132,7 @@ const NoticiasExternas = () => {
         source: "Bacana News",
         category: "Regulatório",
         contentSnippet: "Agência alerta sobre riscos de remédios falsificados e orienta como identificar produtos irregulares. A ANVISA ordenou a apreensão de lotes falsificados de Rybelsus e Ofev, medicamentos para diabetes e fibrose pulmonar...",
-        imageUrl: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        imageUrl: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         readTime: "2 min"
       },
       {
@@ -143,7 +143,7 @@ const NoticiasExternas = () => {
         source: "Poder360",
         category: "Medicamentos",
         contentSnippet: "Ainda não há data para lançamento no Brasil; farmacêutica afirma que programa demonstrou eficácia do medicamento. A ANVISA aprovou a primeira insulina semanal do mundo para diabetes tipo 1 e 2...",
-        imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        imageUrl: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         readTime: "5 min"
       },
       {
@@ -154,7 +154,7 @@ const NoticiasExternas = () => {
         source: "ANVISA",
         category: "Regulatório",
         contentSnippet: "A ANVISA assumiu a posição de Regulatory Chair em dois importantes grupos do ICH, reforçando o protagonismo brasileiro nas discussões sobre harmonização internacional de medicamentos...",
-        imageUrl: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        imageUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         readTime: "4 min"
       },
       {
@@ -165,7 +165,7 @@ const NoticiasExternas = () => {
         source: "G1 Saúde",
         category: "Saúde Geral",
         contentSnippet: "Sistema Único de Saúde expande programa de acesso a medicamentos genéricos, beneficiando milhões de brasileiros com tratamentos mais acessíveis e de qualidade comprovada...",
-        imageUrl: "https://images.unsplash.com/photo-1638202993928-7267aad84c31?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        imageUrl: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         readTime: "3 min"
       },
       {
@@ -187,7 +187,7 @@ const NoticiasExternas = () => {
         source: "R7 Ciência",
         category: "Pesquisa",
         contentSnippet: "Universidade de São Paulo desenvolve composto inovador que demonstra eficácia na redução do declínio cognitivo em pacientes com Alzheimer inicial, abrindo novas perspectivas terapêuticas...",
-        imageUrl: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         readTime: "7 min"
       }
     ];
@@ -458,13 +458,15 @@ const NoticiasExternas = () => {
               <Card key={index} className="overflow-hidden hover:shadow-lg transition-all duration-300 group">
                 <div className="flex flex-col md:flex-row">
                   {/* Imagem de Capa */}
-                  <div className="md:w-80 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
+                  <div className="w-full md:w-72 lg:w-80 h-48 md:h-56 relative overflow-hidden flex-shrink-0">
                     <img 
                       src={item.imageUrl} 
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
                       onError={(e) => {
-                        e.currentTarget.src = "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+                        const target = e.currentTarget as HTMLImageElement;
+                        target.src = "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
                       }}
                     />
                     <div className="absolute top-3 left-3">
