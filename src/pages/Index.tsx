@@ -1,6 +1,7 @@
 import { 
   User, Clock, TrendingUp, DollarSign, MessageCircle, 
-  Settings, Shield, BarChart3, BookOpen 
+  Settings, Shield, BarChart3, BookOpen, HelpCircle, 
+  Users, UserCheck, Bot
 } from "lucide-react";
 
 import Header from "@/components/Header";
@@ -58,6 +59,26 @@ const Index = () => {
       title: "Analytics e Inteligência",
       description: "Dashboards, relatórios analíticos e business intelligence",
       icon: BarChart3
+    },
+    {
+      title: "FAQ",
+      description: "Perguntas frequentes e respostas sobre políticas e procedimentos",
+      icon: HelpCircle
+    },
+    {
+      title: "Manual do Colaborador",
+      description: "Guia completo com todas as informações essenciais para colaboradores",
+      icon: Users
+    },
+    {
+      title: "Manual do Gestor",
+      description: "Orientações e ferramentas específicas para líderes e gestores",
+      icon: UserCheck
+    },
+    {
+      title: "Lis AI",
+      description: "Assistente virtual inteligente para suporte e automação de tarefas",
+      icon: Bot
     }
   ];
 
