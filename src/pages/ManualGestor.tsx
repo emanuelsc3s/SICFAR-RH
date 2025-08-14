@@ -101,7 +101,7 @@ const ManualGestor = () => {
       <div className="text-center">
         
         <h1 className="text-5xl font-bold text-foreground mb-4">{manualData.titulo}</h1>
-        <p className="text-2xl text-slate-600 mb-2">{manualData.empresa}</p>
+        
         <p className="text-xl text-muted-foreground italic mb-6">{manualData.slogan}</p>
         <div className="flex items-center justify-center space-x-6 text-muted-foreground">
           <span className="flex items-center">
