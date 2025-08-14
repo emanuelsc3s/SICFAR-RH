@@ -50,8 +50,8 @@ const SolicitarBeneficio = () => {
       
       // Gerar QR Code
       const qrCodeData = await QRCode.toDataURL(JSON.stringify(voucherData), {
-        width: 200,
-        margin: 2,
+        width: 180,
+        margin: 1,
       });
       
       setVoucher({
@@ -127,8 +127,50 @@ const SolicitarBeneficio = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Estilos de impressão */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .voucher-container, .voucher-container * {
+            visibility: visible;
+          }
+          .voucher-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          .print-hidden {
+            display: none !important;
+          }
+          .grid {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 1rem !important;
+          }
+          .voucher-qr img {
+            max-width: 140px !important;
+            height: auto !important;
+          }
+          .space-y-4 > * + * {
+            margin-top: 0.75rem !important;
+          }
+          .voucher-info {
+            font-size: 14px !important;
+          }
+          @page {
+            margin: 1cm;
+            size: A4;
+          }
+        }
+      `}</style>
+
       {/* Header Navigation */}
-      <header className="text-white px-6 py-2" style={{
+      <header className="text-white px-6 py-2 print-hidden" style={{
         backgroundColor: "#1E3A8A"
       }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -169,7 +211,7 @@ const SolicitarBeneficio = () => {
 
       <div className="max-w-7xl mx-auto p-6">
         {/* Page Title */}
-        <div className="mb-8">
+        <div className="mb-8 print-hidden">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Solicitar Voucher
           </h1>
@@ -180,7 +222,7 @@ const SolicitarBeneficio = () => {
 
         {/* Steps Indicator - Only show for steps 1-3 */}
         {currentStep < 4 && (
-          <div className="flex items-center justify-center mb-8 space-x-8">
+          <div className="flex items-center justify-center mb-8 space-x-8 print-hidden">
             {steps.map((step, index) => (
               <div key={index} className="flex items-center">
                 <div className="flex flex-col items-center">
@@ -347,104 +389,108 @@ const SolicitarBeneficio = () => {
 
         {/* Step 4: Voucher Generated */}
         {currentStep === 4 && voucher && (
-          <Card className="mb-8">
-            <CardContent className="p-6">
-              <div className="text-center mb-6">
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Voucher Gerado com Sucesso!</h2>
-                <p className="text-gray-600">Seu voucher foi criado e está pronto para uso.</p>
-              </div>
+          <div className="voucher-container">
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <div className="text-center mb-6">
+                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 print-hidden" />
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Voucher Gerado com Sucesso!</h2>
+                  <p className="text-gray-600 print-hidden">Seu voucher foi criado e está pronto para uso.</p>
+                </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Informações do Voucher */}
-                <div className="space-y-4">
-                  <div className="bg-blue-50 p-4 rounded-lg border">
-                    <h3 className="font-semibold text-gray-900 mb-2">ID do Voucher</h3>
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-lg">{voucher.id}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(voucher.id)}
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Informações do Voucher */}
+                  <div className="space-y-4 voucher-info">
+                    <div className="bg-blue-50 p-4 rounded-lg border">
+                      <h3 className="font-semibold text-gray-900 mb-2">ID do Voucher</h3>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-lg">{voucher.id}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(voucher.id)}
+                          className="print-hidden"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="bg-yellow-50 p-4 rounded-lg border">
+                      <h3 className="font-semibold text-gray-900 mb-2">Código Verificador</h3>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-lg">{voucher.verificador}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(voucher.verificador)}
+                          className="print-hidden"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-gray-900 mb-3">Programas Incluídos</h3>
+                      <div className="space-y-2">
+                        {voucher.programas.map((programa, index) => {
+                          const programaData = programasDisponiveis.find(p => p.title === programa);
+                          return (
+                            <div key={index} className="flex justify-between items-center">
+                              <span className="text-gray-700">{programa}</span>
+                              <span className="font-semibold">{programaData?.value}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-gray-900 mb-2">Data de Geração</h3>
+                      <p className="text-gray-700">{voucher.dataGeracao}</p>
                     </div>
                   </div>
 
-                  <div className="bg-yellow-50 p-4 rounded-lg border">
-                    <h3 className="font-semibold text-gray-900 mb-2">Código Verificador</h3>
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-lg">{voucher.verificador}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(voucher.verificador)}
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
+                  {/* QR Code */}
+                  <div className="flex flex-col items-center justify-center voucher-qr">
+                    <h3 className="font-semibold text-gray-900 mb-4">QR Code do Voucher</h3>
+                    <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                      <img src={voucher.qrCode} alt="QR Code do Voucher" className="mx-auto" />
                     </div>
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-3">Programas Incluídos</h3>
-                    <div className="space-y-2">
-                      {voucher.programas.map((programa, index) => {
-                        const programaData = programasDisponiveis.find(p => p.title === programa);
-                        return (
-                          <div key={index} className="flex justify-between items-center">
-                            <span className="text-gray-700">{programa}</span>
-                            <span className="font-semibold">{programaData?.value}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2">Data de Geração</h3>
-                    <p className="text-gray-700">{voucher.dataGeracao}</p>
+                    <p className="text-sm text-gray-600 mt-2 text-center">
+                      Escaneie este QR Code para validar o voucher
+                    </p>
                   </div>
                 </div>
 
-                {/* QR Code */}
-                <div className="flex flex-col items-center justify-center">
-                  <h3 className="font-semibold text-gray-900 mb-4">QR Code do Voucher</h3>
-                  <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
-                    <img src={voucher.qrCode} alt="QR Code do Voucher" className="mx-auto" />
+                <div className="mt-6 pt-6 border-t border-gray-200 print-hidden">
+                  <div className="flex justify-center space-x-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        // Reset para criar novo voucher
+                        setCurrentStep(1);
+                        setSelectedPrograms([]);
+                        setUrgencia("");
+                        setInformacoesAdicionais("");
+                        setVoucher(null);
+                      }}
+                    >
+                      Criar Novo Voucher
+                    </Button>
+                    <Button
+                      style={{ backgroundColor: "#1E3A8A" }}
+                      className="text-white hover:opacity-90"
+                      onClick={() => window.print()}
+                    >
+                      Imprimir Voucher
+                    </Button>
                   </div>
-                  <p className="text-sm text-gray-600 mt-2 text-center">
-                    Escaneie este QR Code para validar o voucher
-                  </p>
                 </div>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex justify-center space-x-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      // Reset para criar novo voucher
-                      setCurrentStep(1);
-                      setSelectedPrograms([]);
-                      setUrgencia("");
-                      setInformacoesAdicionais("");
-                      setVoucher(null);
-                    }}
-                  >
-                    Criar Novo Voucher
-                  </Button>
-                  <Button
-                    style={{ backgroundColor: "#1E3A8A" }}
-                    className="text-white hover:opacity-90"
-                    onClick={() => window.print()}
-                  >
-                    Imprimir Voucher
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Navigation Buttons - Only show when not in voucher step */}
