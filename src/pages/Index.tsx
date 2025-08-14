@@ -19,6 +19,8 @@ const Index = () => {
   const handleTileClick = (title: string) => {
     if (title === "Manual do Gestor") {
       navigate("/manualgestor");
+    } else if (title === "FAQ") {
+      navigate("/faq");
     } else {
       console.log(`Clicked on ${title}`);
     }
