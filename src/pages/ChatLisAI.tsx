@@ -20,10 +20,12 @@ export default function ChatLisAI() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [trainingData, setTrainingData] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Carrega configurações do localStorage e gera saudação inicial
   useEffect(() => {
@@ -133,24 +135,11 @@ export default function ChatLisAI() {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  const sendMessage = async () => {
-    if (!inputMessage.trim()) return;
-    
+  const sendMessageWithRetry = async (messageContent: string, isRetry = false) => {
     if (!apiKey) {
       toast.error("Configure sua API key da OpenAI nas configurações");
       return;
     }
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: "user",
-      content: inputMessage.trim(),
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage("");
-    setIsLoading(true);
 
     try {
       const systemPrompt = trainingData 
@@ -164,14 +153,14 @@ export default function ChatLisAI() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o', // Usando gpt-4o pois gpt-5 ainda não está disponível
+          model: 'gpt-4o',
           messages: [
             { role: 'system', content: systemPrompt },
             ...messages.slice(-10).map(msg => ({
               role: msg.type === 'user' ? 'user' : 'assistant',
               content: msg.content
             })),
-            { role: 'user', content: userMessage.content }
+            { role: 'user', content: messageContent }
           ],
           max_tokens: 1000,
           temperature: 0.7,
@@ -191,12 +180,43 @@ export default function ChatLisAI() {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      setIsRetrying(false);
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      toast.error("Erro ao comunicar com a IA. Verifique sua API key.");
+      
+      if (!isRetry) {
+        toast.error("Instabilidade na comunicação com o Servidor");
+        setIsRetrying(true);
+        
+        // Tentar novamente após 5 segundos
+        retryTimeoutRef.current = setTimeout(() => {
+          sendMessageWithRetry(messageContent, true);
+        }, 5000);
+      } else {
+        toast.error("Não foi possível estabelecer comunicação com o servidor");
+        setIsRetrying(false);
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim()) return;
+    
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: "user",
+      content: inputMessage.trim(),
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    const messageContent = inputMessage.trim();
+    setInputMessage("");
+    setIsLoading(true);
+
+    await sendMessageWithRetry(messageContent);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -273,7 +293,7 @@ export default function ChatLisAI() {
                 </div>
               ))}
               
-              {isLoading && (
+              {(isLoading || isRetrying) && (
                 <div className="flex gap-3">
                   <Avatar className="w-8 h-8">
                     <AvatarFallback className="bg-secondary">
@@ -281,10 +301,15 @@ export default function ChatLisAI() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="bg-muted text-foreground p-3 rounded-lg">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                      {isRetrying && (
+                        <span className="text-xs text-muted-foreground ml-2">Tentando novamente...</span>
+                      )}
                     </div>
                   </div>
                 </div>
