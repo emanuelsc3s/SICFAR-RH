@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Search, 
   DollarSign, 
@@ -30,6 +31,7 @@ import {
 
 const BeneficioFaturas = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
 
   // Dados mockados das faturas
   const faturas = [
@@ -244,7 +246,11 @@ const BeneficioFaturas = () => {
                       <TableCell>{fatura.dataCriacao}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end space-x-2">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => navigate(`/beneficiofaturadetalhe/${fatura.id}`)}
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="sm">

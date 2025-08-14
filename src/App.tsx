@@ -12,6 +12,7 @@ import ChatLisAI from "./pages/ChatLisAI";
 import PortalBeneficio from "./pages/PortalBeneficio";
 import SolicitarBeneficio from "./pages/SolicitarBeneficio";
 import BeneficioFaturas from "./pages/BeneficioFaturas";
+import BeneficioFaturaDetalhe from "./pages/BeneficioFaturaDetalhe";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/portalbeneficio" element={<PortalBeneficio />} />
           <Route path="/solicitarbeneficio" element={<SolicitarBeneficio />} />
           <Route path="/beneficiofaturas" element={<BeneficioFaturas />} />
+          <Route path="/beneficiofaturadetalhe/:faturaId" element={<BeneficioFaturaDetalhe />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
