@@ -145,15 +145,15 @@
     bottom: 0;
     background: linear-gradient(
       45deg, 
-      transparent 30%, 
-      rgba(255, 255, 255, 0.2) 48%, 
-      rgba(255, 255, 255, 0.4) 50%, 
-      rgba(255, 255, 255, 0.2) 52%, 
-      transparent 70%
+      transparent 35%, 
+      rgba(255, 255, 255, 0.08) 48%, 
+      rgba(255, 255, 255, 0.15) 50%, 
+      rgba(255, 255, 255, 0.08) 52%, 
+      transparent 65%
     );
     width: 200%;
     height: 200%;
-    animation: slide-diagonal 5s linear infinite;
+    animation: slide-diagonal 3s linear infinite;
     pointer-events: none;
   }
 
@@ -162,16 +162,16 @@
     position: absolute;
     top: 10%;
     right: 15%;
-    width: 8px;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.3);
+    width: 6px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 50%;
-    animation: float 4s ease-in-out infinite;
+    animation: float 2.5s ease-in-out infinite;
     pointer-events: none;
     box-shadow: 
-      20px 30px 0 -2px rgba(255, 255, 255, 0.2),
-      -15px 20px 0 -1px rgba(255, 255, 255, 0.15),
-      30px -10px 0 -3px rgba(255, 255, 255, 0.1);
+      20px 30px 0 -2px rgba(255, 255, 255, 0.1),
+      -15px 20px 0 -1px rgba(255, 255, 255, 0.08),
+      30px -10px 0 -3px rgba(255, 255, 255, 0.06);
   }
 
   .subtle-gradient {
