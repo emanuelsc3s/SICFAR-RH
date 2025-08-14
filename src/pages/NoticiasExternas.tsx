@@ -103,92 +103,92 @@ const NoticiasExternas = () => {
   const generateMockNews = (): NewsItem[] => {
     const mockNews: NewsItem[] = [
       {
-        title: "ANVISA aprova novo medicamento para tratamento de diabetes tipo 2",
-        link: "#",
+        title: "Primeiras canetas emagrecedoras nacionais estarão disponíveis em agosto",
+        link: "https://summitsaude.estadao.com.br/tecnologia-na-saude/primeiras-canetas-emagrecedoras-nacionais-estarao-disponiveis-em-agosto/",
         pubDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        description: "A Agência Nacional de Vigilância Sanitária (ANVISA) aprovou registro de novo medicamento para diabetes desenvolvido por laboratório brasileiro.",
-        source: "G1 Ciência e Saúde",
-        category: "Regulatório",
-        contentSnippet: "A Agência Nacional de Vigilância Sanitária (ANVISA) aprovou registro de novo medicamento para diabetes desenvolvido por laboratório brasileiro...",
+        description: "Lançamento marca um passo inédito da indústria farmacêutica brasileira no combate à obesidade. A farmacêutica EMS prevê lançar em agosto as primeiras versões brasileiras de canetas para tratamento de diabetes tipo 2 e obesidade.",
+        source: "Estadão Saúde",
+        category: "Medicamentos",
+        contentSnippet: "Lançamento marca um passo inédito da indústria farmacêutica brasileira no combate à obesidade. A farmacêutica EMS prevê lançar em agosto as primeiras versões brasileiras de canetas para tratamento de diabetes tipo 2 e obesidade com produção autorizada pela ANVISA...",
         imageUrl: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         readTime: "3 min"
       },
       {
-        title: "Ministério da Saúde amplia distribuição de medicamentos genéricos",
-        link: "#",
+        title: "Fiocruz fecha acordo para produzir canetas emagrecedoras no Brasil",
+        link: "https://www.potiguarnoticias.com.br/noticias/61536/fiocruz-fecha-acordo-para-produzir-canetas-emagrecedoras-no-brasil",
         pubDate: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-        description: "Programa nacional de acesso a medicamentos genéricos será expandido para mais 200 municípios brasileiros este ano.",
-        source: "Estadão Saúde",
-        category: "Medicamentos",
-        contentSnippet: "Programa nacional de acesso a medicamentos genéricos será expandido para mais 200 municípios brasileiros este ano...",
-        imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        readTime: "4 min"
-      },
-      {
-        title: "Nova vacina contra COVID-19 desenvolvida no Brasil entra em fase de testes",
-        link: "#",
-        pubDate: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-        description: "Instituto Butantan inicia ensaios clínicos de nova vacina nacional contra COVID-19 com tecnologia inovadora.",
-        source: "R7 Notícias",
-        category: "Vacinas",
-        contentSnippet: "Instituto Butantan inicia ensaios clínicos de nova vacina nacional contra COVID-19 com tecnologia inovadora...",
-        imageUrl: "https://images.unsplash.com/photo-1632053002881-b2eea14738b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        readTime: "5 min"
-      },
-      {
-        title: "Pesquisa brasileira desenvolve novo tratamento para câncer de mama",
-        link: "#",
-        pubDate: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-        description: "Estudo clínico multicêntrico testa eficácia de nova terapia desenvolvida em universidade paulista para oncologia.",
-        source: "Estadão Ciência",
-        category: "Pesquisa",
-        contentSnippet: "Estudo clínico multicêntrico testa eficácia de nova terapia desenvolvida em universidade paulista para oncologia...",
-        imageUrl: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        readTime: "6 min"
-      },
-      {
-        title: "ANVISA suspende lote de medicamento por contaminação",
-        link: "#",
-        pubDate: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-        description: "Agência determina recolhimento imediato de lotes de anti-inflamatório após detecção de substâncias não autorizadas.",
-        source: "G1 Ciência e Saúde",
+        description: "A Fundação Oswaldo Cruz (Fiocruz) e a farmacêutica EMS firmaram dois acordos de parceria para a produção de liraglutida e de semaglutida, princípios ativos de medicamentos agonistas GLP-1.",
+        source: "Potiguar Notícias",
         category: "Regulatório",
-        contentSnippet: "Agência determina recolhimento imediato de lotes de anti-inflamatório após detecção de substâncias não autorizadas...",
-        imageUrl: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        readTime: "2 min"
-      },
-      {
-        title: "Laboratório nacional lança primeiro biológico para artrite reumatoide",
-        link: "#",
-        pubDate: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
-        description: "Medicamento biológico desenvolvido no Brasil oferece nova opção terapêutica para pacientes com artrite reumatoide.",
-        source: "Estadão Saúde",
-        category: "Medicamentos",
-        contentSnippet: "Medicamento biológico desenvolvido no Brasil oferece nova opção terapêutica para pacientes com artrite reumatoide...",
+        contentSnippet: "A Fundação Oswaldo Cruz (Fiocruz) e a farmacêutica EMS firmaram dois acordos de parceria para a produção de liraglutida e de semaglutida, princípios ativos de medicamentos agonistas GLP-1, popularmente conhecidos como canetas emagrecedoras...",
         imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         readTime: "4 min"
       },
       {
-        title: "SUS incorpora novo tratamento para hepatite C",
+        title: "ANVISA apreende lotes de medicamentos falsos para diabetes e doença pulmonar",
+        link: "https://bacananews.com.br/anvisa-apreende-lotes-de-medicamentos-falsos-para-diabetes-e-doenca-pulmonar/",
+        pubDate: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        description: "A Agência Nacional de Vigilância Sanitária (ANVISA) ordenou a apreensão de lotes falsificados de dois medicamentos essenciais: Rybelsus, usado no tratamento de diabetes tipo 2, e Ofev, indicado para fibrose pulmonar.",
+        source: "Bacana News",
+        category: "Regulatório",
+        contentSnippet: "Agência alerta sobre riscos de remédios falsificados e orienta como identificar produtos irregulares. A ANVISA ordenou a apreensão de lotes falsificados de Rybelsus e Ofev, medicamentos para diabetes e fibrose pulmonar...",
+        imageUrl: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "2 min"
+      },
+      {
+        title: "ANVISA aprova primeira insulina semanal para tratar diabetes 1 e 2",
+        link: "https://www.poder360.com.br/poder-saude/anvisa-aprova-1a-insulina-semanal-para-tratar-diabetes-1-e-2/",
+        pubDate: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+        description: "A ANVISA aprovou a primeira insulina semanal do mundo para o tratamento de pacientes adultos com diabetes tipo 1 e 2. Trata-se da medicação Awiqli, produzida pela farmacêutica Novo Nordisk.",
+        source: "Poder360",
+        category: "Medicamentos",
+        contentSnippet: "Ainda não há data para lançamento no Brasil; farmacêutica afirma que programa demonstrou eficácia do medicamento. A ANVISA aprovou a primeira insulina semanal do mundo para diabetes tipo 1 e 2...",
+        imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "5 min"
+      },
+      {
+        title: "ANVISA assume posição de liderança em grupos do ICH e reforça protagonismo internacional",
+        link: "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2025/anvisa-assume-posicao-de-lideranca-em-grupos-do-ich-e-reforca-protagonismo-internacional",
+        pubDate: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+        description: "Agência passa a exercer um papel-chave nos debates sobre diretrizes internacionais que impactam diretamente o desenvolvimento, a avaliação e o uso seguro e eficaz de medicamentos em escala global.",
+        source: "ANVISA",
+        category: "Regulatório",
+        contentSnippet: "A ANVISA assumiu a posição de Regulatory Chair em dois importantes grupos do ICH, reforçando o protagonismo brasileiro nas discussões sobre harmonização internacional de medicamentos...",
+        imageUrl: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "4 min"
+      },
+      {
+        title: "Ministério da Saúde amplia distribuição de medicamentos genéricos no SUS",
         link: "#",
-        pubDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        description: "Sistema Único de Saúde passa a oferecer gratuitamente novo medicamento para hepatite C com eficácia de 95%.",
-        source: "R7 Notícias",
+        pubDate: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
+        description: "Sistema Único de Saúde expande programa de acesso a medicamentos genéricos, beneficiando milhões de brasileiros com tratamentos mais acessíveis.",
+        source: "G1 Saúde",
         category: "Saúde Geral",
-        contentSnippet: "Sistema Único de Saúde passa a oferecer gratuitamente novo medicamento para hepatite C com eficácia de 95%...",
+        contentSnippet: "Sistema Único de Saúde expande programa de acesso a medicamentos genéricos, beneficiando milhões de brasileiros com tratamentos mais acessíveis e de qualidade comprovada...",
         imageUrl: "https://images.unsplash.com/photo-1638202993928-7267aad84c31?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         readTime: "3 min"
       },
       {
-        title: "Pesquisadores brasileiros descobrem novo princípio ativo antiviral",
+        title: "Nova vacina brasileira contra COVID-19 mostra resultados promissores",
+        link: "#",
+        pubDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        description: "Instituto Butantan apresenta resultados positivos dos ensaios clínicos da nova vacina nacional, com eficácia superior a 90% contra variantes circulantes.",
+        source: "Estadão Ciência",
+        category: "Vacinas",
+        contentSnippet: "Instituto Butantan apresenta resultados positivos dos ensaios clínicos da nova vacina nacional, com eficácia superior a 90% contra variantes circulantes do vírus...",
+        imageUrl: "https://images.unsplash.com/photo-1632053002881-b2eea14738b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "6 min"
+      },
+      {
+        title: "Pesquisa brasileira desenvolve novo medicamento para Alzheimer",
         link: "#",
         pubDate: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString(),
-        description: "Estudo da UNICAMP identifica composto natural com potencial para desenvolvimento de novos antivirais.",
-        source: "Estadão Ciência",
+        description: "Universidade de São Paulo (USP) desenvolve composto inovador que demonstra eficácia na redução do declínio cognitivo em pacientes com Alzheimer inicial.",
+        source: "R7 Ciência",
         category: "Pesquisa",
-        contentSnippet: "Estudo da UNICAMP identifica composto natural com potencial para desenvolvimento de novos antivirais...",
-        imageUrl: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        readTime: "5 min"
+        contentSnippet: "Universidade de São Paulo desenvolve composto inovador que demonstra eficácia na redução do declínio cognitivo em pacientes com Alzheimer inicial, abrindo novas perspectivas terapêuticas...",
+        imageUrl: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "7 min"
       }
     ];
 
