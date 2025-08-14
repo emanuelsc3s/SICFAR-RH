@@ -9,6 +9,7 @@ import {
   Eye,
   Trash2,
   Check,
+  XCircle,
   Home,
   Plus,
   Users,
@@ -21,6 +22,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -32,9 +43,11 @@ import {
 const BeneficioFaturas = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedFaturaId, setSelectedFaturaId] = useState<number | null>(null);
 
   // Dados mockados das faturas
-  const faturas = [
+  const [faturas, setFaturas] = useState([
     {
       id: 1,
       parceiro: "Farmacia Santa Cecilia",
@@ -62,7 +75,7 @@ const BeneficioFaturas = () => {
       status: "Contestada",
       dataCriacao: "29/01/2024"
     }
-  ];
+  ]);
 
   const stats = {
     totalFaturas: faturas.length,
@@ -74,6 +87,25 @@ const BeneficioFaturas = () => {
   const filteredFaturas = faturas.filter(fatura =>
     fatura.parceiro.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleContestFatura = (faturaId: number) => {
+    setSelectedFaturaId(faturaId);
+    setDialogOpen(true);
+  };
+
+  const confirmContestFatura = () => {
+    if (selectedFaturaId !== null) {
+      setFaturas(prevFaturas =>
+        prevFaturas.map(fatura =>
+          fatura.id === selectedFaturaId
+            ? { ...fatura, status: "Contestada" }
+            : fatura
+        )
+      );
+    }
+    setDialogOpen(false);
+    setSelectedFaturaId(null);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -253,8 +285,13 @@ const BeneficioFaturas = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleContestFatura(fatura.id)}
+                            disabled={fatura.status === "Contestada"}
+                          >
+                            <XCircle className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="sm">
                             <Check className="h-4 w-4" />
@@ -268,6 +305,24 @@ const BeneficioFaturas = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Modal de Confirmação */}
+        <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Contestar Fatura</AlertDialogTitle>
+              <AlertDialogDescription>
+                Deseja realmente marcar esta fatura como contestada? Esta ação irá alterar o status da fatura para "Contestada".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Não</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmContestFatura}>
+                Sim
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
