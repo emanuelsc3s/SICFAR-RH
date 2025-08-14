@@ -24,7 +24,6 @@ export default function ChatLisAI() {
   const [showRetryModal, setShowRetryModal] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [trainingData, setTrainingData] = useState("");
-  const [pendingMessage, setPendingMessage] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -49,7 +48,6 @@ export default function ChatLisAI() {
     // Gera saudação inicial da IA
     const generateInitialGreeting = async () => {
       if (!savedApiKey) {
-        // Fallback se não tiver API key
         const fallbackMessage: Message = {
           id: "initial",
           type: "assistant",
@@ -95,7 +93,6 @@ export default function ChatLisAI() {
           throw new Error('Erro na API');
         }
       } catch (error) {
-        // Fallback se houver erro
         const fallbackMessage: Message = {
           id: "initial",
           type: "assistant",
@@ -109,11 +106,10 @@ export default function ChatLisAI() {
     generateInitialGreeting();
   }, []);
 
-  // Auto scroll para última mensagem e foco no input
+  // Auto scroll para última mensagem
   useEffect(() => {
     const scrollToBottom = () => {
       if (scrollAreaRef.current) {
-        // Tenta múltiplos seletores para o viewport do ScrollArea
         const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]') ||
                                scrollAreaRef.current.querySelector('.scroll-area-viewport') ||
                                scrollAreaRef.current.firstElementChild;
@@ -123,16 +119,12 @@ export default function ChatLisAI() {
             scrollContainer.scrollTop = scrollContainer.scrollHeight;
           };
           
-          // Usa requestAnimationFrame para garantir que o DOM seja atualizado
           requestAnimationFrame(() => {
             doScroll();
-            
-            // Scrolls com delays para garantir
             setTimeout(doScroll, 100);
             setTimeout(doScroll, 300);
             setTimeout(doScroll, 600);
             
-            // Foca no input após o scroll (só se não estiver carregando)
             if (!isLoading && inputRef.current) {
               setTimeout(() => {
                 inputRef.current?.focus();
@@ -194,7 +186,6 @@ export default function ChatLisAI() {
       setShowRetryModal(false);
       setIsLoading(false);
       
-      // Foca no input após sucesso
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
@@ -204,10 +195,8 @@ export default function ChatLisAI() {
       if (!showRetryModal) {
         toast.error("Instabilidade na comunicação com o Servidor");
         setShowRetryModal(true);
-        setPendingMessage(messageContent);
         setIsLoading(false);
         
-        // Inicia tentativas contínuas
         startRetryLoop(messageContent);
       }
     }
@@ -258,19 +247,16 @@ export default function ChatLisAI() {
         setMessages(prev => [...prev, assistantMessage]);
         setShowRetryModal(false);
         
-        // Foca no input após sucesso
         setTimeout(() => {
           inputRef.current?.focus();
         }, 100);
       } catch (error) {
-        // Se ainda está com modal aberto, tenta novamente em 3 segundos
         if (showRetryModal) {
           retryTimeoutRef.current = setTimeout(attemptRetry, 3000);
         }
       }
     };
 
-    // Primeira tentativa em 3 segundos
     retryTimeoutRef.current = setTimeout(attemptRetry, 3000);
   };
 
@@ -279,9 +265,7 @@ export default function ChatLisAI() {
       clearTimeout(retryTimeoutRef.current);
     }
     setShowRetryModal(false);
-    setPendingMessage("");
     
-    // Foca no input após cancelar
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
@@ -314,11 +298,9 @@ export default function ChatLisAI() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Headers fixos */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-background">
         <Header />
         
-        {/* Breadcrumb Header */}
         <header className="bg-card border-b border-border">
           <div className="container mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
@@ -344,86 +326,82 @@ export default function ChatLisAI() {
         </header>
       </div>
 
-      {/* Chat Container - com margin-top para compensar o header fixo */}
       <div className="pt-48 pb-8 h-screen flex flex-col">
         <div className="flex-1 container mx-auto px-6 flex flex-col max-w-4xl">
-        <Card className="flex-1 flex flex-col overflow-hidden">
-          {/* Chat Messages */}
-          <ScrollArea className="flex-1 p-6 mt-4">
-            <div ref={scrollAreaRef} className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-3 ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-                >
-                  <Avatar className="w-8 h-8 flex-shrink-0">
-                    <AvatarFallback className={message.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}>
-                      {message.type === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className={`max-w-[80%] ${message.type === 'user' ? 'text-right' : 'text-left'}`}>
-                    <div
-                      className={`inline-block p-3 rounded-lg ${
-                        message.type === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground'
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {message.timestamp.toLocaleTimeString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              
-              {isLoading && (
-                <div className="flex gap-3">
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-secondary">
-                      <Bot className="w-4 h-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="bg-muted text-foreground p-3 rounded-lg">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <Card className="flex-1 flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1 p-6 mt-4">
+              <div ref={scrollAreaRef} className="space-y-4">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex gap-3 ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                  >
+                    <Avatar className="w-8 h-8 flex-shrink-0">
+                      <AvatarFallback className={message.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}>
+                        {message.type === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className={`max-w-[80%] ${message.type === 'user' ? 'text-right' : 'text-left'}`}>
+                      <div
+                        className={`inline-block p-3 rounded-lg ${
+                          message.type === 'user'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-foreground'
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {message.timestamp.toLocaleTimeString()}
+                      </p>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+                ))}
+                
+                {isLoading && (
+                  <div className="flex gap-3">
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="bg-secondary">
+                        <Bot className="w-4 h-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="bg-muted text-foreground p-3 rounded-lg">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
 
-          {/* Input Area */}
-          <div className="border-t border-border p-4">
-            <div className="flex gap-2">
-              <Input
-                ref={inputRef}
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Digite sua mensagem para a Lis..."
-                disabled={isLoading}
-                className="flex-1"
-              />
-              <Button 
-                onClick={sendMessage}
-                disabled={isLoading || !inputMessage.trim()}
-                size="icon"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
+            <div className="border-t border-border p-4">
+              <div className="flex gap-2">
+                <Input
+                  ref={inputRef}
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Digite sua mensagem para a Lis..."
+                  disabled={isLoading}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={sendMessage}
+                  disabled={isLoading || !inputMessage.trim()}
+                  size="icon"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
         </div>
       </div>
 
-      {/* Modal de Retry */}
       <Dialog open={showRetryModal} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md">
           <div className="flex flex-col items-center text-center p-4">
