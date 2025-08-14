@@ -126,7 +126,7 @@
   /* Corporate Card Styles */
   .tile-card {
     @apply bg-card rounded-lg shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elevated)] 
-           transition-all duration-200 hover:scale-[1.02] cursor-pointer
+           transition-all duration-300 hover:scale-[1.005] cursor-pointer
            border border-border/50;
   }
 
