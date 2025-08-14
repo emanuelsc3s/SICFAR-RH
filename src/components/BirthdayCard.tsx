@@ -15,28 +15,36 @@ interface BirthdayPerson {
 
 const birthdayData: BirthdayPerson[] = [
   { 
-    name: "GLEDSON GUSTAVO DE SOUSA SILVA", 
-    department: "EMBALAGEM SPEPII", 
-    date: "02/08", 
+    name: "FRANCISCO EUDES MAGALHAES FILHO", 
+    department: "Microbiológico", 
+    date: "14/08", 
     avatar: "",
-    admissionDate: "04.06.2024",
-    birthDate: "02.08.2005"
+    admissionDate: "08.04.2024",
+    birthDate: "14.08.1986"
   },
   { 
-    name: "SAULO MENDES TEIXEIRA", 
-    department: "CONSTRUÇÃO II", 
-    date: "02/08", 
+    name: "CICERA ALVES DA SILVA", 
+    department: "SPP-FRASCOS E AMPOLAS", 
+    date: "14/08", 
     avatar: "",
-    admissionDate: "13.04.2021",
-    birthDate: "02.08.1990"
+    admissionDate: "15.07.2005",
+    birthDate: "14.08.1977"
   },
   { 
-    name: "DONILTON ALVES DOS SANTOS", 
-    department: "EMBALAGEM SPEPII", 
-    date: "02/08", 
+    name: "JOSINALDO FERREIRA DOS SANTOS", 
+    department: "Embalagem SPEP I", 
+    date: "14/08", 
     avatar: "",
-    admissionDate: "01.12.2012",
-    birthDate: "02.08.1983"
+    admissionDate: "01.03.2022",
+    birthDate: "14.08.1983"
+  },
+  { 
+    name: "JOSE DANIEL BARBOSA CARDOSO", 
+    department: "C P H D", 
+    date: "14/09", 
+    avatar: "",
+    admissionDate: "04.12.2017",
+    birthDate: "14.09.1994"
   },
 ];
 
