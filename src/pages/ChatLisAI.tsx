@@ -186,7 +186,7 @@ export default function ChatLisAI() {
       </div>
 
       {/* Chat Container - com margin-top para compensar o header fixo */}
-      <div className="pt-40 pb-8 h-screen flex flex-col">
+      <div className="pt-48 pb-8 h-screen flex flex-col">
         <div className="flex-1 container mx-auto px-6 flex flex-col max-w-4xl">
         <Card className="flex-1 flex flex-col overflow-hidden">
           {/* Chat Messages */}
