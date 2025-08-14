@@ -383,38 +383,7 @@ const ManualGestor = () => {
         {/* Hero Section */}
         <div className="relative overflow-hidden mb-12">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10"></div>
-          <div className="relative z-10 text-center py-16 px-8">
-            <div className="max-w-4xl mx-auto space-y-8">
-              {/* Icon and Title */}
-              <div className="flex flex-col items-center space-y-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-2xl transform -rotate-3">
-                  <BookOpen className="h-12 w-12 text-primary-foreground" />
-                </div>
-                <div className="space-y-4">
-                  <h1 className="text-6xl font-bold bg-gradient-to-r from-primary via-primary/90 to-secondary bg-clip-text text-transparent leading-tight">
-                    {manualData.titulo}
-                  </h1>
-                  <p className="text-2xl text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed">
-                    {manualData.slogan}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Meta Information */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4">
-                <div className="flex items-center space-x-3 bg-background/80 backdrop-blur-sm px-6 py-3 rounded-full border shadow-md">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  <span className="font-semibold text-foreground">{manualData.data}</span>
-                </div>
-                <div className="hidden sm:block w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
-                <div className="flex items-center space-x-3 bg-background/80 backdrop-blur-sm px-6 py-3 rounded-full border shadow-md">
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                    Versão {manualData.versao}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </div>
+          
           
           {/* Decorative Elements */}
           <div className="absolute top-10 left-10 w-20 h-20 bg-primary/10 rounded-full blur-xl"></div>
