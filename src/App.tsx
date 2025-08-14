@@ -13,6 +13,7 @@ import PortalBeneficio from "./pages/PortalBeneficio";
 import SolicitarBeneficio from "./pages/SolicitarBeneficio";
 import BeneficioFaturas from "./pages/BeneficioFaturas";
 import BeneficioFaturaDetalhe from "./pages/BeneficioFaturaDetalhe";
+import NoticiasExternas from "./pages/NoticiasExternas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/solicitarbeneficio" element={<SolicitarBeneficio />} />
           <Route path="/beneficiofaturas" element={<BeneficioFaturas />} />
           <Route path="/beneficiofaturadetalhe/:faturaId" element={<BeneficioFaturaDetalhe />} />
+          <Route path="/noticiasexternas" element={<NoticiasExternas />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
