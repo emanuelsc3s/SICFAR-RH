@@ -257,6 +257,117 @@ const ManualGestor = () => {
         </div>
 
         {/* Conteúdo da seção baseado no JSON */}
+        {secaoId === "processo_contratacao" && (
+          <div className="space-y-6">
+            <Card className="p-6">
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div>
+                  <h3 className="text-2xl font-bold text-foreground mb-4 flex items-center">
+                    <Clock className="h-6 w-6 text-blue-600 mr-2" />
+                    Prazo de Contratação
+                  </h3>
+                  <p className="text-lg text-muted-foreground mb-6">
+                    Após a assinatura de Dr. Salviano, o candidato será contratado em no máximo <span className="font-bold text-primary">15 dias</span>.
+                  </p>
+                  
+                  <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg">
+                    <div className="flex items-start">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 mr-3 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-amber-800 mb-1">Observação Importante</h4>
+                        <p className="text-amber-700 text-sm">
+                          Haverá exceções em casos de não autorização da diretoria e candidatos que não estão disponíveis de imediato.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-lg">
+                  <h4 className="text-xl font-bold text-foreground mb-6 flex items-center">
+                    <FileCheck className="h-6 w-6 text-purple-600 mr-2" />
+                    Fluxo do Processo
+                  </h4>
+                  <ol className="space-y-4">
+                    {[
+                      {
+                        texto: "Assinatura de Dr. Salviano validando contratação",
+                        responsavel: "GESTOR",
+                        cor: "green"
+                      },
+                      {
+                        texto: "Solicitação de documentação",
+                        responsavel: "RH",
+                        cor: "blue"
+                      },
+                      {
+                        texto: "Integração",
+                        responsavel: "RH + GESTOR",
+                        cor: "purple"
+                      },
+                      {
+                        texto: "Exame admissional e início",
+                        responsavel: "CANDIDATO",
+                        cor: "orange"
+                      }
+                    ].map((item, index) => (
+                      <li key={index} className="flex items-start">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold mr-4 flex-shrink-0 ${
+                          item.cor === 'green' ? 'bg-green-500' :
+                          item.cor === 'blue' ? 'bg-blue-500' :
+                          item.cor === 'purple' ? 'bg-purple-500' :
+                          'bg-orange-500'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{item.texto}</p>
+                          <p className={`text-xs font-bold mt-1 ${
+                            item.cor === 'green' ? 'text-green-600' :
+                            item.cor === 'blue' ? 'text-blue-600' :
+                            item.cor === 'purple' ? 'text-purple-600' :
+                            'text-orange-600'
+                          }`}>
+                            ({item.responsavel})
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </Card>
+
+            {/* Timeline visual */}
+            <Card className="p-6">
+              <h3 className="text-xl font-bold text-foreground mb-6 text-center">Timeline do Processo de Contratação</h3>
+              <div className="flex items-center justify-between relative">
+                <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-green-200 via-blue-200 via-purple-200 to-orange-200 -translate-y-1/2 z-0"></div>
+                
+                {[
+                  { titulo: "Aprovação", dias: "Dia 0", cor: "green" },
+                  { titulo: "Documentação", dias: "Dias 1-5", cor: "blue" },
+                  { titulo: "Integração", dias: "Dias 6-10", cor: "purple" },
+                  { titulo: "Início", dias: "Até dia 15", cor: "orange" }
+                ].map((etapa, index) => (
+                  <div key={index} className="flex flex-col items-center relative z-10">
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white font-bold shadow-lg ${
+                      etapa.cor === 'green' ? 'bg-green-500' :
+                      etapa.cor === 'blue' ? 'bg-blue-500' :
+                      etapa.cor === 'purple' ? 'bg-purple-500' :
+                      'bg-orange-500'
+                    }`}>
+                      {index + 1}
+                    </div>
+                    <h4 className="font-semibold text-foreground mt-3 text-center">{etapa.titulo}</h4>
+                    <p className="text-sm text-muted-foreground text-center">{etapa.dias}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
+        
         {secaoId === "processo_selecao" && (
           <div className="space-y-6">
             <Card className="p-6">
