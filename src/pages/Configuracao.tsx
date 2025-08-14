@@ -6,18 +6,24 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 export default function Configuracao() {
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
+  const [trainingData, setTrainingData] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Carrega a API key do localStorage ao montar o componente
+  // Carrega as configurações do localStorage ao montar o componente
   useEffect(() => {
-    const savedApiKey = localStorage.getItem("chatgpt_api_key");
+    const savedApiKey = localStorage.getItem("openai_api_key");
+    const savedTrainingData = localStorage.getItem("lis_training_data");
     if (savedApiKey) {
       setApiKey(savedApiKey);
+    }
+    if (savedTrainingData) {
+      setTrainingData(savedTrainingData);
     }
   }, []);
 
@@ -31,7 +37,8 @@ export default function Configuracao() {
     
     try {
       // Salva no localStorage
-      localStorage.setItem("chatgpt_api_key", apiKey.trim());
+      localStorage.setItem("openai_api_key", apiKey.trim());
+      localStorage.setItem("lis_training_data", trainingData.trim());
       
       toast.success("Configurações salvas com sucesso!");
     } catch (error) {
@@ -44,8 +51,10 @@ export default function Configuracao() {
 
   const handleClear = () => {
     setApiKey("");
-    localStorage.removeItem("chatgpt_api_key");
-    toast.success("API key removida com sucesso!");
+    setTrainingData("");
+    localStorage.removeItem("openai_api_key");
+    localStorage.removeItem("lis_training_data");
+    toast.success("Configurações removidas com sucesso!");
   };
 
   return (
@@ -78,14 +87,14 @@ export default function Configuracao() {
                   Configurações da IA
                 </h2>
                 <p className="text-muted-foreground">
-                  Configure a API key do ChatGPT para utilizar os recursos de IA da aplicação.
+                  Configure a API key da OpenAI e os dados de treinamento para a assistente virtual Lis.
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="api-key" className="text-sm font-medium">
-                    API Key do ChatGPT
+                    API Key da OpenAI
                   </Label>
                   <div className="relative">
                     <Input
@@ -115,6 +124,22 @@ export default function Configuracao() {
                   </p>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="training-data" className="text-sm font-medium">
+                    Dados de Treinamento da Lis
+                  </Label>
+                  <Textarea
+                    id="training-data"
+                    value={trainingData}
+                    onChange={(e) => setTrainingData(e.target.value)}
+                    placeholder="Insira aqui as informações que a Lis deve conhecer (políticas da empresa, procedimentos, FAQ, etc.)"
+                    className="min-h-[120px]"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Estes dados serão usados para treinar a assistente virtual Lis e personalizar suas respostas.
+                  </p>
+                </div>
+
                 <div className="flex gap-3 pt-4">
                   <Button 
                     onClick={handleSave}
@@ -128,7 +153,7 @@ export default function Configuracao() {
                   <Button 
                     variant="outline"
                     onClick={handleClear}
-                    disabled={!apiKey}
+                    disabled={!apiKey && !trainingData}
                   >
                     Limpar
                   </Button>
