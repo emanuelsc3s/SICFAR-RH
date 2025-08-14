@@ -170,36 +170,40 @@ export default function ChatLisAI() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header />
-      
-      {/* Breadcrumb Header */}
-      <header className="bg-card border-b border-border">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link 
-                to="/" 
-                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Voltar
+    <div className="min-h-screen bg-background">
+      {/* Headers fixos */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-background">
+        <Header />
+        
+        {/* Breadcrumb Header */}
+        <header className="bg-card border-b border-border">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Link 
+                  to="/" 
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Voltar
+                </Link>
+                <div className="text-muted-foreground">/</div>
+                <h1 className="text-xl font-semibold text-foreground">Chat com Lis AI</h1>
+              </div>
+              <Link to="/configuracao">
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  Configurar
+                </Button>
               </Link>
-              <div className="text-muted-foreground">/</div>
-              <h1 className="text-xl font-semibold text-foreground">Chat com Lis AI</h1>
             </div>
-            <Link to="/configuracao">
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Settings className="w-4 h-4" />
-                Configurar
-              </Button>
-            </Link>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
-      {/* Chat Container */}
-      <div className="flex-1 container mx-auto px-6 py-8 flex flex-col max-w-4xl">
+      {/* Chat Container - com margin-top para compensar o header fixo */}
+      <div className="pt-32 h-screen flex flex-col">
+        <div className="flex-1 container mx-auto px-6 py-8 flex flex-col max-w-4xl">
         <Card className="flex-1 flex flex-col overflow-hidden">
           {/* Chat Messages */}
           <ScrollArea className="flex-1 p-6" ref={scrollAreaRef}>
@@ -273,6 +277,7 @@ export default function ChatLisAI() {
             </div>
           </div>
         </Card>
+        </div>
       </div>
     </div>
   );
