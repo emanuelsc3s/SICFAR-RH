@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, Calendar, Search, Filter, RefreshCw } from "lucide-react";
+import { ExternalLink, Calendar, Search, Filter, RefreshCw, Clock } from "lucide-react";
 import Header from "@/components/Header";
 
 interface NewsItem {
@@ -16,6 +16,8 @@ interface NewsItem {
   source: string;
   category: string;
   contentSnippet: string;
+  imageUrl: string;
+  readTime: string;
 }
 
 interface RSSSource {
@@ -107,7 +109,9 @@ const NoticiasExternas = () => {
         description: "A Agência Nacional de Vigilância Sanitária (ANVISA) aprovou registro de novo medicamento para diabetes desenvolvido por laboratório brasileiro.",
         source: "G1 Ciência e Saúde",
         category: "Regulatório",
-        contentSnippet: "A Agência Nacional de Vigilância Sanitária (ANVISA) aprovou registro de novo medicamento para diabetes desenvolvido por laboratório brasileiro..."
+        contentSnippet: "A Agência Nacional de Vigilância Sanitária (ANVISA) aprovou registro de novo medicamento para diabetes desenvolvido por laboratório brasileiro...",
+        imageUrl: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "3 min"
       },
       {
         title: "Ministério da Saúde amplia distribuição de medicamentos genéricos",
@@ -116,7 +120,9 @@ const NoticiasExternas = () => {
         description: "Programa nacional de acesso a medicamentos genéricos será expandido para mais 200 municípios brasileiros este ano.",
         source: "Estadão Saúde",
         category: "Medicamentos",
-        contentSnippet: "Programa nacional de acesso a medicamentos genéricos será expandido para mais 200 municípios brasileiros este ano..."
+        contentSnippet: "Programa nacional de acesso a medicamentos genéricos será expandido para mais 200 municípios brasileiros este ano...",
+        imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "4 min"
       },
       {
         title: "Nova vacina contra COVID-19 desenvolvida no Brasil entra em fase de testes",
@@ -125,7 +131,9 @@ const NoticiasExternas = () => {
         description: "Instituto Butantan inicia ensaios clínicos de nova vacina nacional contra COVID-19 com tecnologia inovadora.",
         source: "R7 Notícias",
         category: "Vacinas",
-        contentSnippet: "Instituto Butantan inicia ensaios clínicos de nova vacina nacional contra COVID-19 com tecnologia inovadora..."
+        contentSnippet: "Instituto Butantan inicia ensaios clínicos de nova vacina nacional contra COVID-19 com tecnologia inovadora...",
+        imageUrl: "https://images.unsplash.com/photo-1632053002881-b2eea14738b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "5 min"
       },
       {
         title: "Pesquisa brasileira desenvolve novo tratamento para câncer de mama",
@@ -134,7 +142,9 @@ const NoticiasExternas = () => {
         description: "Estudo clínico multicêntrico testa eficácia de nova terapia desenvolvida em universidade paulista para oncologia.",
         source: "Estadão Ciência",
         category: "Pesquisa",
-        contentSnippet: "Estudo clínico multicêntrico testa eficácia de nova terapia desenvolvida em universidade paulista para oncologia..."
+        contentSnippet: "Estudo clínico multicêntrico testa eficácia de nova terapia desenvolvida em universidade paulista para oncologia...",
+        imageUrl: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "6 min"
       },
       {
         title: "ANVISA suspende lote de medicamento por contaminação",
@@ -143,7 +153,9 @@ const NoticiasExternas = () => {
         description: "Agência determina recolhimento imediato de lotes de anti-inflamatório após detecção de substâncias não autorizadas.",
         source: "G1 Ciência e Saúde",
         category: "Regulatório",
-        contentSnippet: "Agência determina recolhimento imediato de lotes de anti-inflamatório após detecção de substâncias não autorizadas..."
+        contentSnippet: "Agência determina recolhimento imediato de lotes de anti-inflamatório após detecção de substâncias não autorizadas...",
+        imageUrl: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "2 min"
       },
       {
         title: "Laboratório nacional lança primeiro biológico para artrite reumatoide",
@@ -152,7 +164,9 @@ const NoticiasExternas = () => {
         description: "Medicamento biológico desenvolvido no Brasil oferece nova opção terapêutica para pacientes com artrite reumatoide.",
         source: "Estadão Saúde",
         category: "Medicamentos",
-        contentSnippet: "Medicamento biológico desenvolvido no Brasil oferece nova opção terapêutica para pacientes com artrite reumatoide..."
+        contentSnippet: "Medicamento biológico desenvolvido no Brasil oferece nova opção terapêutica para pacientes com artrite reumatoide...",
+        imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "4 min"
       },
       {
         title: "SUS incorpora novo tratamento para hepatite C",
@@ -161,7 +175,9 @@ const NoticiasExternas = () => {
         description: "Sistema Único de Saúde passa a oferecer gratuitamente novo medicamento para hepatite C com eficácia de 95%.",
         source: "R7 Notícias",
         category: "Saúde Geral",
-        contentSnippet: "Sistema Único de Saúde passa a oferecer gratuitamente novo medicamento para hepatite C com eficácia de 95%..."
+        contentSnippet: "Sistema Único de Saúde passa a oferecer gratuitamente novo medicamento para hepatite C com eficácia de 95%...",
+        imageUrl: "https://images.unsplash.com/photo-1638202993928-7267aad84c31?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "3 min"
       },
       {
         title: "Pesquisadores brasileiros descobrem novo princípio ativo antiviral",
@@ -170,7 +186,9 @@ const NoticiasExternas = () => {
         description: "Estudo da UNICAMP identifica composto natural com potencial para desenvolvimento de novos antivirais.",
         source: "Estadão Ciência",
         category: "Pesquisa",
-        contentSnippet: "Estudo da UNICAMP identifica composto natural com potencial para desenvolvimento de novos antivirais..."
+        contentSnippet: "Estudo da UNICAMP identifica composto natural com potencial para desenvolvimento de novos antivirais...",
+        imageUrl: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        readTime: "5 min"
       }
     ];
 
@@ -437,35 +455,57 @@ const NoticiasExternas = () => {
             </Card>
           ) : (
             filteredNews.map((item, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start gap-4">
-                    <CardTitle className="text-lg leading-tight">
-                      {item.title}
-                    </CardTitle>
-                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      <Badge variant="outline">{item.source}</Badge>
-                      <Badge className={getCategoryColor(item.category)}>
+              <Card key={index} className="overflow-hidden hover:shadow-lg transition-all duration-300 group">
+                <div className="flex flex-col md:flex-row">
+                  {/* Imagem de Capa */}
+                  <div className="md:w-80 h-48 md:h-auto relative overflow-hidden flex-shrink-0">
+                    <img 
+                      src={item.imageUrl} 
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+                      }}
+                    />
+                    <div className="absolute top-3 left-3">
+                      <Badge className={getCategoryColor(item.category)} variant="secondary">
                         {item.category}
                       </Badge>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    {formatDate(item.pubDate)}
+                  
+                  {/* Conteúdo da Notícia */}
+                  <div className="flex-1 p-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge variant="outline" className="text-xs">
+                        {item.source}
+                      </Badge>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        {formatDate(item.pubDate)}
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {item.readTime}
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+                      {item.title}
+                    </h3>
+                    
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
+                      {item.contentSnippet}
+                    </p>
+                    
+                    <Button variant="outline" size="sm" asChild className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      <a href={item.link} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Ler Notícia Completa
+                      </a>
+                    </Button>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="mb-4 text-sm">
-                    {item.contentSnippet}
-                  </CardDescription>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={item.link} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Ler Notícia Completa
-                    </a>
-                  </Button>
-                </CardContent>
+                </div>
               </Card>
             ))
           )}
