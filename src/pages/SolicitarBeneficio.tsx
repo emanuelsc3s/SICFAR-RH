@@ -2,10 +2,16 @@ import { useState } from "react";
 import { Home, Plus, Users, QrCode, Download, DollarSign, Eye, Utensils, Car, GraduationCap, ArrowLeft, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const SolicitarBeneficio = () => {
   const [activeButton, setActiveButton] = useState("Solicitar Voucher");
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [urgencia, setUrgencia] = useState("");
+  const [informacoesAdicionais, setInformacoesAdicionais] = useState("");
 
   const handleProgramSelection = (programTitle: string) => {
     setSelectedPrograms(prev => 
@@ -13,6 +19,18 @@ const SolicitarBeneficio = () => {
         ? prev.filter(p => p !== programTitle)
         : [...prev, programTitle]
     );
+  };
+
+  const handleNextStep = () => {
+    if (currentStep === 1 && selectedPrograms.length > 0) {
+      setCurrentStep(2);
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const navigationButtons = [
@@ -47,9 +65,9 @@ const SolicitarBeneficio = () => {
   ];
 
   const steps = [
-    { number: 1, title: "Escolher Programa", subtitle: "Selecione o tipo de voucher", active: true },
-    { number: 2, title: "Preencher Detalhes", subtitle: "Informações adicionais", active: false },
-    { number: 3, title: "Revisar e Confirmar", subtitle: "Conferir dados antes do envio", active: false }
+    { number: 1, title: "Escolher Programa", subtitle: "Selecione o tipo de voucher", active: currentStep === 1 },
+    { number: 2, title: "Preencher Detalhes", subtitle: "Informações adicionais", active: currentStep === 2 },
+    { number: 3, title: "Revisar e Confirmar", subtitle: "Conferir dados antes do envio", active: currentStep === 3 }
   ];
 
   return (
@@ -130,62 +148,111 @@ const SolicitarBeneficio = () => {
           ))}
         </div>
 
-        {/* Program Selection */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Escolha o Programa</h2>
-            <div className="space-y-4">
-              {programasDisponiveis.map((programa, index) => {
-                const IconComponent = programa.icon;
-                const isSelected = selectedPrograms.includes(programa.title);
-                
-                return (
-                  <Card 
-                    key={index} 
-                    className={`border cursor-pointer transition-all ${
-                      isSelected 
-                        ? 'border-blue-600 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => handleProgramSelection(programa.title)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <IconComponent className="w-6 h-6 text-gray-600" />
+        {/* Step 1: Program Selection */}
+        {currentStep === 1 && (
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Escolha o Programa</h2>
+              <div className="space-y-4">
+                {programasDisponiveis.map((programa, index) => {
+                  const IconComponent = programa.icon;
+                  const isSelected = selectedPrograms.includes(programa.title);
+                  
+                  return (
+                    <Card 
+                      key={index} 
+                      className={`border cursor-pointer transition-all ${
+                        isSelected 
+                          ? 'border-blue-600 bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => handleProgramSelection(programa.title)}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-start space-x-4">
+                            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <IconComponent className="w-6 h-6 text-gray-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-900 mb-1">{programa.title}</h3>
+                              <p className="text-sm text-gray-600 mb-2">{programa.description}</p>
+                              <p className="font-bold text-gray-900">Valor: {programa.value}</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900 mb-1">{programa.title}</h3>
-                            <p className="text-sm text-gray-600 mb-2">{programa.description}</p>
-                            <p className="font-bold text-gray-900">Valor: {programa.value}</p>
+                          <div 
+                            className={`w-6 h-6 border-2 flex items-center justify-center ${
+                              isSelected 
+                                ? 'border-blue-600 bg-blue-600 rounded-sm' 
+                                : 'border-gray-300 rounded-sm'
+                            }`}
+                          >
+                            {isSelected && (
+                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
                           </div>
                         </div>
-                        <div 
-                          className={`w-6 h-6 border-2 flex items-center justify-center ${
-                            isSelected 
-                              ? 'border-blue-600 bg-blue-600 rounded-sm' 
-                              : 'border-gray-300 rounded-sm'
-                          }`}
-                        >
-                          {isSelected && (
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 2: Details Form */}
+        {currentStep === 2 && (
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Detalhes da Solicitação</h2>
+              <div className="space-y-6">
+                {/* Urgência */}
+                <div>
+                  <Label htmlFor="urgencia" className="text-sm font-medium text-gray-900 mb-2 block">
+                    Urgência
+                  </Label>
+                  <Select value={urgencia} onValueChange={setUrgencia}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Normal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="baixa">Baixa</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="alta">Alta</SelectItem>
+                      <SelectItem value="urgente">Urgente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Informações Adicionais */}
+                <div>
+                  <Label htmlFor="informacoes" className="text-sm font-medium text-gray-900 mb-2 block">
+                    Informações Adicionais
+                  </Label>
+                  <Textarea
+                    id="informacoes"
+                    placeholder="Informações complementares (opcional)..."
+                    value={informacoesAdicionais}
+                    onChange={(e) => setInformacoesAdicionais(e.target.value)}
+                    className="min-h-[120px] resize-none"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Navigation Buttons */}
         <div className="flex justify-between">
-          <Button variant="outline" className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center space-x-2"
+            onClick={handlePrevStep}
+            disabled={currentStep === 1}
+          >
             <ArrowLeft className="w-4 h-4" />
             <span>Anterior</span>
           </Button>
@@ -194,7 +261,8 @@ const SolicitarBeneficio = () => {
               backgroundColor: "#1E3A8A"
             }}
             className="text-white hover:opacity-90 flex items-center space-x-2"
-            disabled={selectedPrograms.length === 0}
+            onClick={handleNextStep}
+            disabled={currentStep === 1 && selectedPrograms.length === 0}
           >
             <span>Próximo</span>
             <ArrowRight className="w-4 h-4" />
