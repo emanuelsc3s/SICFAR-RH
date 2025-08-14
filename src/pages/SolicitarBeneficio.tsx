@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Home, Plus, Users, QrCode, Download, DollarSign, Eye, ArrowLeft, ArrowRight, Flame, Pill, Car, Heart, Bus, Fuel } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 
 const SolicitarBeneficio = () => {
@@ -9,6 +12,13 @@ const SolicitarBeneficio = () => {
   const [activeButton, setActiveButton] = useState("Solicitar Voucher");
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedBeneficios, setSelectedBeneficios] = useState<string[]>([]);
+  
+  // Form data for step 2
+  const [formData, setFormData] = useState({
+    justificativa: "",
+    urgencia: "",
+    informacoesAdicionais: ""
+  });
 
   const navigationButtons = [
     { name: "Início", icon: Home },
@@ -251,13 +261,62 @@ const SolicitarBeneficio = () => {
           </div>
         )}
 
-        {/* Step 2: Placeholder for future implementation */}
+        {/* Step 2: Detalhes da Solicitação */}
         {currentStep === 2 && (
           <div className="bg-white rounded-lg border border-gray-200 p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-8">Preencher Detalhes</h2>
-            <p className="text-gray-600 mb-8">Esta etapa será implementada em breve.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">Detalhes da Solicitação</h2>
             
-            <div className="flex items-center justify-between">
+            <div className="space-y-6">
+              {/* Justificativa */}
+              <div className="space-y-2">
+                <Label htmlFor="justificativa" className="text-sm font-medium text-gray-900">
+                  Justificativa <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  id="justificativa"
+                  placeholder="Explique o motivo da solicitação..."
+                  value={formData.justificativa}
+                  onChange={(e) => setFormData({...formData, justificativa: e.target.value})}
+                  className="min-h-[120px] resize-none bg-gray-50 border-gray-200"
+                  required
+                />
+              </div>
+
+              {/* Urgência */}
+              <div className="space-y-2">
+                <Label htmlFor="urgencia" className="text-sm font-medium text-gray-900">
+                  Urgência
+                </Label>
+                <Select value={formData.urgencia} onValueChange={(value) => setFormData({...formData, urgencia: value})}>
+                  <SelectTrigger className="bg-gray-50 border-gray-200">
+                    <SelectValue placeholder="Normal" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                    <SelectItem value="baixa">Baixa</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="alta">Alta</SelectItem>
+                    <SelectItem value="urgente">Urgente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Informações Adicionais */}
+              <div className="space-y-2">
+                <Label htmlFor="informacoesAdicionais" className="text-sm font-medium text-gray-900">
+                  Informações Adicionais
+                </Label>
+                <Textarea
+                  id="informacoesAdicionais"
+                  placeholder="Informações complementares (opcional)..."
+                  value={formData.informacoesAdicionais}
+                  onChange={(e) => setFormData({...formData, informacoesAdicionais: e.target.value})}
+                  className="min-h-[120px] resize-none bg-gray-50 border-gray-200"
+                />
+              </div>
+            </div>
+            
+            {/* Navigation Buttons */}
+            <div className="flex items-center justify-between mt-8">
               <Button 
                 variant="ghost" 
                 onClick={handlePrevStep}
@@ -269,8 +328,9 @@ const SolicitarBeneficio = () => {
               
               <Button 
                 onClick={handleNextStep}
+                disabled={!formData.justificativa.trim()}
                 className="flex items-center text-white"
-                style={{ backgroundColor: "#1E3A8A" }}
+                style={{ backgroundColor: "#6B9EF0" }}
               >
                 Próximo
                 <ArrowRight className="w-4 h-4 ml-2" />
