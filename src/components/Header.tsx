@@ -49,7 +49,6 @@ const Header = () => {
               <p className="text-xs text-muted-foreground">Gerente de TI</p>
             </div>
             <Avatar className="h-9 w-9">
-              <AvatarImage src="/placeholder-avatar.jpg" />
               <AvatarFallback className="bg-primary text-primary-foreground">AS</AvatarFallback>
             </Avatar>
           </div>
