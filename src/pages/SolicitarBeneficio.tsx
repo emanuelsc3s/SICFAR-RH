@@ -178,8 +178,8 @@ const SolicitarBeneficio = () => {
 
       {showVoucher ? (
         /* Voucher Screen */
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="mb-6">
+        <div className="max-w-4xl mx-auto p-4 print:p-2">
+          <div className="mb-4 print:hidden">
             <Button 
               variant="ghost" 
               onClick={() => setShowVoucher(false)}
@@ -191,111 +191,109 @@ const SolicitarBeneficio = () => {
           </div>
 
           {/* Voucher Card */}
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden print:shadow-none print:rounded-none">
             {/* Header - Blue gradient like the primary theme */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 text-white">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 text-white print:px-4 print:py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                    <Plus className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center print:w-8 print:h-8">
+                    <Plus className="w-5 h-5 text-white print:w-4 print:h-4" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold">Voucher Gerado</h1>
-                    <p className="text-blue-100">Farmace Benefícios</p>
+                    <h1 className="text-xl font-bold print:text-lg">Voucher Gerado</h1>
+                    <p className="text-blue-100 text-sm">Farmace Benefícios</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-blue-100 text-sm">Data de geração</p>
-                  <p className="text-lg font-semibold">{new Date().toLocaleDateString("pt-BR")}</p>
+                  <p className="text-blue-100 text-xs">Data de geração</p>
+                  <p className="text-sm font-semibold">{new Date().toLocaleDateString("pt-BR")}</p>
                 </div>
               </div>
             </div>
 
             {/* Voucher Details */}
-            <div className="p-8">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <div className="p-6 print:p-4">
+              <div className="text-center mb-6 print:mb-4">
+                <h2 className="text-xl font-bold text-gray-900 mb-2 print:text-lg print:mb-1">
                   Parabéns! Seu voucher foi aprovado!
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-gray-600 text-sm">
                   Utilize as informações abaixo para resgatar seus benefícios
                 </p>
               </div>
 
-              {/* Main Voucher Info */}
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-6 border-2 border-blue-200 mb-8">
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="md:col-span-2">
-                    <p className="text-sm text-gray-600 mb-1">Número do Voucher</p>
-                    <p className="text-3xl font-bold text-blue-600">{generateVoucherNumber()}</p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Este é o seu código de identificação
-                    </p>
+              {/* Main Voucher Info - Compact Layout */}
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border-2 border-blue-200 mb-6 print:mb-4 print:p-3">
+                <div className="flex items-start justify-between gap-4">
+                  {/* Left side - Voucher info */}
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-600 mb-1">Número do Voucher</p>
+                    <p className="text-2xl font-bold text-blue-600 mb-3 print:text-xl">{generateVoucherNumber()}</p>
                     
-                    <div className="mt-6 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Total de benefícios:</span>
-                        <span className="font-semibold text-gray-900">{selectedBeneficios.length}</span>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-600">Benefícios:</span>
+                        <span className="font-semibold text-gray-900 ml-2">{selectedBeneficios.length}</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Status:</span>
-                        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                      <div>
+                        <span className="text-gray-600">Status:</span>
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium ml-2">
                           Aprovado
                         </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Validade:</span>
-                        <span className="font-semibold text-gray-900">
+                      <div className="col-span-2">
+                        <span className="text-gray-600">Validade:</span>
+                        <span className="font-semibold text-gray-900 ml-2">
                           {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-BR")}
                         </span>
                       </div>
                     </div>
                   </div>
                   
-                  {/* QR Code Section */}
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                  {/* Right side - QR Code */}
+                  <div className="flex flex-col items-center">
+                    <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 print:p-1">
                       {qrCodeUrl ? (
                         <img 
                           src={qrCodeUrl} 
                           alt="QR Code do Voucher" 
-                          className="w-40 h-40"
+                          className="w-24 h-24 print:w-20 print:h-20"
                         />
                       ) : (
-                        <div className="w-40 h-40 bg-gray-100 flex items-center justify-center rounded-lg">
-                          <QrCode className="w-16 h-16 text-gray-400" />
+                        <div className="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg print:w-20 print:h-20">
+                          <QrCode className="w-12 h-12 text-gray-400 print:w-10 print:h-10" />
                         </div>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-2 text-center">
+                    <p className="text-xs text-gray-500 mt-1 text-center">
                       Escaneie para validar
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Benefits List */}
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Benefícios Aprovados</h3>
-                <div className="space-y-3">
+              {/* Benefits List - Compact */}
+              <div className="mb-6 print:mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 print:text-base print:mb-2">Benefícios Aprovados</h3>
+                <div className="space-y-2">
                   {selectedBeneficios.map((beneficioId) => {
                     const beneficio = beneficios.find(b => b.id === beneficioId);
                     if (!beneficio) return null;
                     const IconComponent = beneficio.icon;
                     
                     return (
-                      <div key={beneficioId} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <IconComponent className="w-5 h-5 text-white" />
+                      <div key={beneficioId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg print:p-2">
+                        <div className="flex items-center space-x-3 print:space-x-2">
+                          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center print:w-6 print:h-6">
+                            <IconComponent className="w-4 h-4 text-white print:w-3 print:h-3" />
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900">{beneficio.title}</p>
-                            <p className="text-sm text-gray-600">{beneficio.description}</p>
+                            <p className="font-semibold text-gray-900 text-sm">{beneficio.title}</p>
+                            <p className="text-xs text-gray-600 print:hidden">{beneficio.description}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-blue-600">{beneficio.value}</p>
+                          <p className="font-semibold text-blue-600 text-sm">{beneficio.value}</p>
                           <p className="text-xs text-gray-500">Disponível</p>
                         </div>
                       </div>
@@ -304,35 +302,39 @@ const SolicitarBeneficio = () => {
                 </div>
               </div>
 
-              {/* Request Details */}
-              <div className="border-t border-gray-200 pt-6 mb-8">
-                <h4 className="font-semibold text-gray-900 mb-4">Detalhes da Solicitação</h4>
-                <div className="grid md:grid-cols-2 gap-6 text-sm">
-                  <div>
-                    <p className="text-gray-600 mb-1">Urgência:</p>
-                    <p className="text-gray-900 font-medium">{formData.urgencia || "Normal"}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Data de Solicitação:</p>
-                    <p className="text-gray-900 font-medium">{new Date().toLocaleDateString("pt-BR")}</p>
-                  </div>
-                  {formData.justificativa && (
-                    <div className="md:col-span-2">
-                      <p className="text-gray-600 mb-1">Justificativa:</p>
-                      <p className="text-gray-900">{formData.justificativa}</p>
+              {/* Request Details - Compact */}
+              {(formData.justificativa || formData.urgencia || formData.informacoesAdicionais) && (
+                <div className="border-t border-gray-200 pt-4 mb-6 print:pt-3 print:mb-4">
+                  <h4 className="font-semibold text-gray-900 mb-3 print:text-sm print:mb-2">Detalhes da Solicitação</h4>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    {formData.urgencia && (
+                      <div>
+                        <p className="text-gray-600 mb-1">Urgência:</p>
+                        <p className="text-gray-900 font-medium">{formData.urgencia}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-gray-600 mb-1">Data:</p>
+                      <p className="text-gray-900 font-medium">{new Date().toLocaleDateString("pt-BR")}</p>
                     </div>
-                  )}
-                  {formData.informacoesAdicionais && (
-                    <div className="md:col-span-2">
-                      <p className="text-gray-600 mb-1">Informações Adicionais:</p>
-                      <p className="text-gray-900">{formData.informacoesAdicionais}</p>
-                    </div>
-                  )}
+                    {formData.justificativa && (
+                      <div className="col-span-2 print:hidden">
+                        <p className="text-gray-600 mb-1">Justificativa:</p>
+                        <p className="text-gray-900 text-xs">{formData.justificativa}</p>
+                      </div>
+                    )}
+                    {formData.informacoesAdicionais && (
+                      <div className="col-span-2 print:hidden">
+                        <p className="text-gray-600 mb-1">Informações Adicionais:</p>
+                        <p className="text-gray-900 text-xs">{formData.informacoesAdicionais}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 print:hidden">
                 <Button 
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={() => window.print()}

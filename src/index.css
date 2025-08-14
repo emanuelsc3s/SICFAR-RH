@@ -191,3 +191,134 @@
     @apply bg-muted-foreground rounded-full;
   }
 }
+
+/* Print styles for voucher */
+@media print {
+  @page {
+    margin: 0.5in;
+    size: A4;
+  }
+  
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  .print\\:hidden {
+    display: none !important;
+  }
+  
+  .print\\:p-2 {
+    padding: 0.5rem !important;
+  }
+  
+  .print\\:p-3 {
+    padding: 0.75rem !important;
+  }
+  
+  .print\\:p-4 {
+    padding: 1rem !important;
+  }
+  
+  .print\\:px-4 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  .print\\:py-3 {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  
+  .print\\:pt-3 {
+    padding-top: 0.75rem !important;
+  }
+  
+  .print\\:mb-2 {
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .print\\:mb-4 {
+    margin-bottom: 1rem !important;
+  }
+  
+  .print\\:text-lg {
+    font-size: 1.125rem !important;
+    line-height: 1.75rem !important;
+  }
+  
+  .print\\:text-base {
+    font-size: 1rem !important;
+    line-height: 1.5rem !important;
+  }
+  
+  .print\\:text-xl {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+  
+  .print\\:text-sm {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+  
+  .print\\:w-8 {
+    width: 2rem !important;
+  }
+  
+  .print\\:h-8 {
+    height: 2rem !important;
+  }
+  
+  .print\\:w-6 {
+    width: 1.5rem !important;
+  }
+  
+  .print\\:h-6 {
+    height: 1.5rem !important;
+  }
+  
+  .print\\:w-4 {
+    width: 1rem !important;
+  }
+  
+  .print\\:h-4 {
+    height: 1rem !important;
+  }
+  
+  .print\\:w-3 {
+    width: 0.75rem !important;
+  }
+  
+  .print\\:h-3 {
+    height: 0.75rem !important;
+  }
+  
+  .print\\:w-10 {
+    width: 2.5rem !important;
+  }
+  
+  .print\\:h-10 {
+    height: 2.5rem !important;
+  }
+  
+  .print\\:w-20 {
+    width: 5rem !important;
+  }
+  
+  .print\\:h-20 {
+    height: 5rem !important;
+  }
+  
+  .print\\:shadow-none {
+    box-shadow: none !important;
+  }
+  
+  .print\\:rounded-none {
+    border-radius: 0 !important;
+  }
+  
+  .print\\:space-x-2 > :not([hidden]) ~ :not([hidden]) {
+    margin-left: 0.5rem !important;
+  }
+}
