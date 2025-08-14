@@ -46,27 +46,15 @@ export default function ChatLisAI() {
   // Auto scroll para última mensagem e foco no input
   useEffect(() => {
     const scrollToBottom = () => {
-      console.log('Tentando fazer scroll...', scrollAreaRef.current);
-      
       if (scrollAreaRef.current) {
         // Tenta múltiplos seletores para o viewport do ScrollArea
         const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]') ||
                                scrollAreaRef.current.querySelector('.scroll-area-viewport') ||
                                scrollAreaRef.current.firstElementChild;
         
-        console.log('Container encontrado:', scrollContainer);
-        
         if (scrollContainer) {
           const doScroll = () => {
-            const oldScrollTop = scrollContainer.scrollTop;
-            const scrollHeight = scrollContainer.scrollHeight;
-            const clientHeight = scrollContainer.clientHeight;
-            
-            console.log('Antes do scroll - scrollTop:', oldScrollTop, 'scrollHeight:', scrollHeight, 'clientHeight:', clientHeight);
-            
-            scrollContainer.scrollTop = scrollHeight;
-            
-            console.log('Depois do scroll - scrollTop:', scrollContainer.scrollTop);
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
           };
           
           // Usa requestAnimationFrame para garantir que o DOM seja atualizado
@@ -85,11 +73,7 @@ export default function ChatLisAI() {
               }, 700);
             }
           });
-        } else {
-          console.log('ScrollContainer não encontrado');
         }
-      } else {
-        console.log('scrollAreaRef.current é null');
       }
     };
 
