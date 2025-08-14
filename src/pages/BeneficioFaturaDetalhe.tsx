@@ -7,11 +7,11 @@ import {
   Calendar,
   User,
   FileText,
+  Download,
   Home,
   Plus,
   Users,
   QrCode,
-  Download,
   Eye
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -230,6 +230,54 @@ const BeneficioFaturaDetalhe = () => {
     }
   };
 
+  const exportToCSV = () => {
+    // Cabeçalho do CSV
+    const headers = [
+      "Parceiro",
+      "Referência",
+      "Status Fatura",
+      "Data Criação",
+      "Valor Total Fatura",
+      "ID Voucher",
+      "Funcionário",
+      "CPF",
+      "Valor Voucher",
+      "Data Resgate",
+      "Hora Resgate"
+    ];
+
+    // Dados da fatura combinados com vouchers
+    const csvData = vouchers.map(voucher => [
+      fatura.parceiro,
+      fatura.referencia,
+      fatura.status,
+      fatura.dataCriacao,
+      `R$ ${fatura.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      voucher.id,
+      voucher.funcionario,
+      voucher.cpf,
+      `R$ ${voucher.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      voucher.dataResgate,
+      voucher.horaResgate
+    ]);
+
+    // Criar conteúdo CSV
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(","))
+      .join("\n");
+
+    // Criar e baixar arquivo
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `fatura_${fatura.parceiro.replace(/\s+/g, "_")}_${fatura.referencia}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filteredVouchers = vouchers.filter(voucher =>
     voucher.funcionario.toLowerCase().includes(searchTerm.toLowerCase()) ||
     voucher.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -324,15 +372,26 @@ const BeneficioFaturaDetalhe = () => {
               Voltar para Faturas
             </Button>
             
-            {fatura.status !== "Contestada" && (
+            <div className="flex space-x-3">
+              {fatura.status !== "Contestada" && (
+                <Button 
+                  variant="outline" 
+                  className="mb-4 bg-orange-600 text-white border-orange-600 hover:bg-orange-700 hover:border-orange-700"
+                  onClick={handleContestFatura}
+                >
+                  Contestar Fatura
+                </Button>
+              )}
+              
               <Button 
-                variant="outline" 
-                className="mb-4 bg-orange-600 text-white border-orange-600 hover:bg-orange-700 hover:border-orange-700"
-                onClick={handleContestFatura}
+                className="mb-4 text-white hover:opacity-90"
+                style={{ backgroundColor: "#1E3A8A" }}
+                onClick={exportToCSV}
               >
-                Contestar Fatura
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
               </Button>
-            )}
+            </div>
           </div>
         </div>
 
