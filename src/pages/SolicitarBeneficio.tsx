@@ -270,7 +270,7 @@ const SolicitarBeneficio = () => {
               {/* Justificativa */}
               <div className="space-y-2">
                 <Label htmlFor="justificativa" className="text-sm font-medium text-gray-900">
-                  Justificativa <span className="text-red-500">*</span>
+                  Justificativa para Solicitação Mensal Excedente
                 </Label>
                 <Textarea
                   id="justificativa"
@@ -278,7 +278,6 @@ const SolicitarBeneficio = () => {
                   value={formData.justificativa}
                   onChange={(e) => setFormData({...formData, justificativa: e.target.value})}
                   className="min-h-[120px] resize-none bg-gray-50 border-gray-200"
-                  required
                 />
               </div>
 
@@ -328,7 +327,6 @@ const SolicitarBeneficio = () => {
               
               <Button 
                 onClick={handleNextStep}
-                disabled={!formData.justificativa.trim()}
                 className="flex items-center text-white"
                 style={{ backgroundColor: "#6B9EF0" }}
               >
