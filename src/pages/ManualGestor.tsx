@@ -11,7 +11,7 @@ const ManualGestor = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("sumario");
   const manualData = {
-    titulo: "Manual Básico de Gestão de Pessoas",
+    titulo: "Manual do Gestor",
     empresa: "Farmace",
     slogan: "Compromisso com a saúde!",
     data: "Setembro/2024",
