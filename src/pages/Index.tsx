@@ -29,6 +29,10 @@ const Index = () => {
       console.log(`Clicked on ${title}`);
     }
   };
+
+  const hasRedirect = (title: string) => {
+    return ["Manual do Gestor", "FAQ", "Lis AI", "Benefícios e Remuneração"].includes(title);
+  };
   const mainTiles = [
     {
       title: "Gestão de Dados",
@@ -124,6 +128,7 @@ const Index = () => {
                   description={tile.description}
                   icon={tile.icon}
                   gradient={tile.gradient}
+                  disabled={!hasRedirect(tile.title)}
                   onClick={() => handleTileClick(tile.title)}
                 />
               ))}

@@ -6,14 +6,17 @@ interface TileCardProps {
   description: string;
   icon: LucideIcon;
   gradient?: boolean;
+  disabled?: boolean;
   onClick?: () => void;
 }
 
-const TileCard = ({ title, description, icon: Icon, gradient = false, onClick }: TileCardProps) => {
+const TileCard = ({ title, description, icon: Icon, gradient = false, disabled = false, onClick }: TileCardProps) => {
   return (
     <Card 
-      className={`tile-card p-6 ${gradient ? 'hero-gradient text-primary-foreground' : ''}`}
-      onClick={onClick}
+      className={`tile-card p-6 ${gradient ? 'hero-gradient text-primary-foreground' : ''} ${
+        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 transition-transform'
+      }`}
+      onClick={disabled ? undefined : onClick}
     >
       <div className="flex flex-col h-full">
         <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${
