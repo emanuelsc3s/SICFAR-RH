@@ -25,13 +25,15 @@ const Index = () => {
       navigate("/chatlisai");
     } else if (title === "Benefícios e Remuneração") {
       navigate("/portalbeneficio");
+    } else if (title === "Comunicação") {
+      navigate("/comunicacao");
     } else {
       console.log(`Clicked on ${title}`);
     }
   };
 
   const hasRedirect = (title: string) => {
-    return ["Manual do Gestor", "FAQ", "Lis AI", "Benefícios e Remuneração"].includes(title);
+    return ["Manual do Gestor", "FAQ", "Lis AI", "Benefícios e Remuneração", "Comunicação"].includes(title);
   };
   const mainTiles = [
     {
