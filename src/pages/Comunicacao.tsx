@@ -166,31 +166,49 @@ const Comunicacao = () => {
                     onClick={() => handleVisualizarNoticia(noticia)}
                   >
                     <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex gap-2">
-                          <Badge variant="outline">{noticia.categoria}</Badge>
-                          <Badge className={getPrioridadeColor(noticia.prioridade)}>
-                            {noticia.prioridade === 'alta' && 'Alta'}
-                            {noticia.prioridade === 'media' && 'Média'}
-                            {noticia.prioridade === 'baixa' && 'Baixa'}
-                          </Badge>
+                      <div className="flex gap-4">
+                        {/* Imagem de Capa */}
+                        {noticia.imagem && (
+                          <div className="flex-shrink-0 w-48 h-32">
+                            <div className="w-full h-full rounded-lg overflow-hidden bg-muted">
+                              <img 
+                                src={noticia.imagem} 
+                                alt={`Capa da notícia: ${noticia.titulo}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Conteúdo da Notícia */}
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex gap-2">
+                              <Badge variant="outline">{noticia.categoria}</Badge>
+                              <Badge className={getPrioridadeColor(noticia.prioridade)}>
+                                {noticia.prioridade === 'alta' && 'Alta'}
+                                {noticia.prioridade === 'media' && 'Média'}
+                                {noticia.prioridade === 'baixa' && 'Baixa'}
+                              </Badge>
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              {formatarData(noticia.dataPublicacao)}
+                            </span>
+                          </div>
+                          
+                          <h3 className="text-lg font-semibold mb-2 hover:text-primary transition-colors">
+                            {noticia.titulo}
+                          </h3>
+                          
+                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                            {noticia.resumo}
+                          </p>
+                          
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>Por: {noticia.autor}</span>
+                            <span>{noticia.visualizacoes} visualizações</span>
+                          </div>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {formatarData(noticia.dataPublicacao)}
-                        </span>
-                      </div>
-                      
-                      <h3 className="text-lg font-semibold mb-2 hover:text-primary transition-colors">
-                        {noticia.titulo}
-                      </h3>
-                      
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {noticia.resumo}
-                      </p>
-                      
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Por: {noticia.autor}</span>
-                        <span>{noticia.visualizacoes} visualizações</span>
                       </div>
                     </CardContent>
                   </Card>
