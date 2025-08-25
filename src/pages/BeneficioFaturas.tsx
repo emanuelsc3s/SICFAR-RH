@@ -152,6 +152,11 @@ const BeneficioFaturas = () => {
                     ? "bg-white/30 text-white border-b-2 border-white/60" 
                     : "text-white hover:bg-white/20 hover:text-white"
                 }`}
+                onClick={() => {
+                  if (button.name === "Início") {
+                    navigate("/");
+                  }
+                }}
               >
                 <button.icon className="w-4 h-4 mr-2" />
                 {button.name}
