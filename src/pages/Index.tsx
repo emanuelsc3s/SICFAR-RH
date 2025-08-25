@@ -33,7 +33,7 @@ const Index = () => {
   };
 
   const hasRedirect = (title: string) => {
-    return ["Manual do Gestor", "FAQ", "Lis AI", "Benefícios e Remuneração", "Comunicação"].includes(title);
+    return ["Manual do Gestor", "FAQ", "Lis AI", "Benefícios e Remuneração", "Comunicação", "Gestão de Dados"].includes(title);
   };
   const mainTiles = [
     {
