@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrReader } from 'react-qr-reader';
+import { Scanner } from '@yudiel/react-qr-scanner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,17 +51,17 @@ const ScannerParceiro = () => {
     return mockVouchers[codigo] || null;
   };
 
-  const handleScan = (result: any, error: any) => {
-    if (result) {
-      const code = result?.text || result;
+  const handleScan = (result: any) => {
+    if (result && result.length > 0) {
+      const code = result[0].rawValue;
       setScannedCode(code);
       processVoucherCode(code);
       setCameraEnabled(false);
     }
+  };
 
-    if (error) {
-      console.info(error);
-    }
+  const handleError = (error: any) => {
+    console.info('Scanner error:', error);
   };
 
   const processVoucherCode = async (codigo: string) => {
@@ -199,17 +199,22 @@ const ScannerParceiro = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="max-w-md mx-auto">
-                      <QrReader
-                        onResult={handleScan}
+                    <div className="max-w-md mx-auto rounded-lg overflow-hidden">
+                      <Scanner
+                        onScan={handleScan}
+                        onError={handleError}
                         constraints={{
                           facingMode: 'environment'
                         }}
-                        className="w-full"
+                        styles={{
+                          container: {
+                            width: '100%',
+                          }
+                        }}
                       />
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setCameraEnabled(false)}
                     >
                       Fechar Câmera
