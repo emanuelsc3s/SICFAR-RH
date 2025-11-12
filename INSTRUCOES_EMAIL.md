@@ -73,12 +73,14 @@ As configurações SMTP estão no arquivo `.env`:
 
 ```env
 EMAIL_API=sicfar@farmace.com.br
-EMAIL_API_SENHA=321651310
+EMAIL_API_SENHA=sua_senha_smtp_aqui
 EMAIL_API_HOST=smtplw.com.br
 EMAIL_API_PORTA=465
 EMAIL_API_USER=farmace
 BACKEND_PORT=3001
 ```
+
+**⚠️ IMPORTANTE:** Substitua `sua_senha_smtp_aqui` pela senha real do SMTP no arquivo `.env` (não commitado).
 
 ## 🎨 Template do Email
 

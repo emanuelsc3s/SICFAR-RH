@@ -189,11 +189,12 @@ taskkill /PID <PID> /F
 2. Confirme as credenciais:
    ```env
    EMAIL_API=sicfar@farmace.com.br
-   EMAIL_API_SENHA=pobhsxux2793
+   EMAIL_API_SENHA=sua_senha_smtp_aqui
    EMAIL_API_HOST=smtplw.com.br
    EMAIL_API_PORTA=465
    EMAIL_API_USER=farmace
    ```
+   **⚠️ IMPORTANTE:** Use a senha real do SMTP no arquivo `.env`
 3. Reinicie o backend
 
 ### Problema 4: "Erro ao enviar e-mail"
@@ -246,7 +247,7 @@ O sistema usa as seguintes configurações SMTP (arquivo `.env`):
 
 ```env
 EMAIL_API=sicfar@farmace.com.br
-EMAIL_API_SENHA=pobhsxux2793
+EMAIL_API_SENHA=sua_senha_smtp_aqui
 EMAIL_API_HOST=smtplw.com.br
 EMAIL_API_PORTA=465
 EMAIL_API_USER=farmace
@@ -257,6 +258,7 @@ BACKEND_PORT=3001
 - Porta 465 usa SSL/TLS (secure: true)
 - Credenciais devem estar válidas e ativas
 - O servidor SMTP deve estar acessível
+- **⚠️ Substitua `sua_senha_smtp_aqui` pela senha real no arquivo `.env`**
 
 ---
 
