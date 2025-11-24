@@ -57,7 +57,13 @@ const Index = () => {
   };
 
   const handleAutoatendimentoAction = (action: string) => {
-    console.log(`Ação selecionada: ${action}`);
+    if (action === "Solicitar Saída Antecipada") {
+      navigate("/solicitarsaidaantecipada");
+    } else if (action === "Solicitar Férias") {
+      navigate("/solicitarferias");
+    } else {
+      console.log(`Ação selecionada: ${action}`);
+    }
   };
 
   const formatarData = (dataStr: string): string => {
