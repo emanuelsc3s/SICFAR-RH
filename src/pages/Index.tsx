@@ -63,6 +63,8 @@ const Index = () => {
       navigate("/solicitarferias");
     } else if (action === "Solicitar Transferência") {
       navigate("/solicitartransferencia");
+    } else if (action === "Enviar Atestado Médico") {
+      navigate("/enviaratestado");
     } else {
       console.log(`Ação selecionada: ${action}`);
     }
