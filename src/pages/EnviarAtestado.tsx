@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FileCheck, Send, Upload, X, Calendar, FileText, AlertCircle } from "lucide-react";
+import { ArrowLeft, FileCheck, Send, Upload, X, Calendar, FileText, AlertCircle, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
