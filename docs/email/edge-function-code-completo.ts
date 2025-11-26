@@ -22,13 +22,19 @@ const corsHeaders = {
 // INTERFACES TYPESCRIPT
 // ============================================================================
 
+interface FormData {
+  justificativa: string
+  urgencia: string
+  informacoesAdicionais: string
+}
+
 interface VoucherEmailRequest {
   destinatario: string
   nomeDestinatario?: string
   voucherNumber: string
   beneficios?: Array<{ title: string; value: string }>
   pdfBase64: string
-  formData?: any
+  formData?: FormData
 }
 
 interface SuccessResponse {

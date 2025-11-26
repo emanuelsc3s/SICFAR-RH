@@ -19,6 +19,7 @@ import AnnouncementsCard from "@/components/AnnouncementsCard";
 import SystemStatus from "@/components/SystemStatus";
 import NewsCard from "@/components/NewsCard";
 import { toast } from "sonner";
+import { adicionarNovaSolicitacao } from "@/utils/solicitacoesStorage";
 
 const SolicitarSaidaAntecipada = () => {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ const SolicitarSaidaAntecipada = () => {
 
   const motivosSaidaAntecipada = [
     { value: "consulta-medica", label: "Consulta médica" },
+    { value: "emergencia-medica", label: "Emergência Médica" },
     { value: "assuntos-pessoais", label: "Assuntos pessoais" },
     { value: "emergencia-familiar", label: "Emergência familiar" },
     { value: "compromisso-inadiavel", label: "Compromisso inadiável" },
@@ -54,6 +56,26 @@ const SolicitarSaidaAntecipada = () => {
       toast.error("Por favor, detalhe o motivo da saída antecipada.");
       return;
     }
+
+    // Encontrar o label do motivo selecionado
+    const motivoSelecionado = motivosSaidaAntecipada.find(
+      m => m.value === formData.motivo
+    );
+
+    // Criar notificação para salvar no localStorage
+    const novaSolicitacao = {
+      matricula: "001244", // Em produção, isso viria do usuário logado
+      colaborador: formData.colaborador,
+      solicitacao: "Saída Antecipada" as const,
+      status: "Pendente" as const,
+      datasolicitacao: new Date().toISOString().split('T')[0],
+      setor: "Não especificado", // Em produção, viria do sistema
+      cargo: "Não especificado", // Em produção, viria do sistema
+      descricaoSolicitacao: `${motivoSelecionado?.label || formData.motivo}: ${formData.detalhamento}`,
+    };
+
+    // Salvar no localStorage
+    adicionarNovaSolicitacao(novaSolicitacao);
 
     // Aqui seria feita a integração com o backend
     console.log("Dados da solicitação:", formData);

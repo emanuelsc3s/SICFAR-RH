@@ -40,13 +40,23 @@ import {
 } from "@/components/ui/table";
 import { buscarVouchersPorParceiro } from "@/utils/voucherStorage";
 
+// Interface para o tipo Voucher
+interface Voucher {
+  id: string;
+  funcionario: string;
+  cpf: string;
+  valor: number;
+  dataResgate: string;
+  horaResgate: string;
+}
+
 const BeneficioFaturaDetalhe = () => {
   const { faturaId } = useParams();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [motivoContestacao, setMotivoContestacao] = useState("");
-  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
 
   // Dados mockados da fatura específica - Apenas Farmacia Santa Cecilia
   const [faturaInfo, setFaturaInfo] = useState({
@@ -59,38 +69,38 @@ const BeneficioFaturaDetalhe = () => {
     }
   });
 
-  // Dados mockados de fallback (caso não haja vouchers no localStorage)
-  const vouchersMockados = [
-    {
-      id: "VCH-00154832",
-      funcionario: "Ana Silva Santos",
-      cpf: "123.456.789-00",
-      valor: 500.00,
-      dataResgate: "15/01/2024",
-      horaResgate: "14:30"
-    },
-    {
-      id: "VCH-00154833",
-      funcionario: "Carlos Eduardo Lima",
-      cpf: "987.654.321-00",
-      valor: 500.00,
-      dataResgate: "16/01/2024",
-      horaResgate: "10:15"
-    },
-    {
-      id: "VCH-00154834",
-      funcionario: "Maria José Oliveira",
-      cpf: "456.789.123-00",
-      valor: 500.00,
-      dataResgate: "18/01/2024",
-      horaResgate: "16:45"
-    }
-  ];
-
   const fatura = faturaInfo[Number(faturaId) as keyof typeof faturaInfo];
 
   // Carregar vouchers do localStorage quando o componente montar ou faturaId mudar
   useEffect(() => {
+    // Dados mockados de fallback (caso não haja vouchers no localStorage)
+    const vouchersMockados: Voucher[] = [
+      {
+        id: "VCH-00154832",
+        funcionario: "Ana Silva Santos",
+        cpf: "123.456.789-00",
+        valor: 500.00,
+        dataResgate: "15/01/2024",
+        horaResgate: "14:30"
+      },
+      {
+        id: "VCH-00154833",
+        funcionario: "Carlos Eduardo Lima",
+        cpf: "987.654.321-00",
+        valor: 500.00,
+        dataResgate: "16/01/2024",
+        horaResgate: "10:15"
+      },
+      {
+        id: "VCH-00154834",
+        funcionario: "Maria José Oliveira",
+        cpf: "456.789.123-00",
+        valor: 500.00,
+        dataResgate: "18/01/2024",
+        horaResgate: "16:45"
+      }
+    ];
+
     const carregarVouchers = () => {
       if (Number(faturaId) === 1) {
         // Buscar vouchers da Farmacia Santa Cecilia no localStorage

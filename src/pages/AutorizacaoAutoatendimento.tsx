@@ -52,7 +52,12 @@ import BirthdayCard from "@/components/BirthdayCard";
 import AnnouncementsCard from "@/components/AnnouncementsCard";
 import SystemStatus from "@/components/SystemStatus";
 import NewsCard from "@/components/NewsCard";
-import { NotificacaoSolicitacao, gerarNotificacoesExemplo } from "@/types/notificacao";
+import { NotificacaoSolicitacao } from "@/types/notificacao";
+import {
+  carregarSolicitacoes,
+  aprovarSolicitacao,
+  rejeitarSolicitacao
+} from "@/utils/solicitacoesStorage";
 
 const AutorizacaoAutoatendimento = () => {
   const navigate = useNavigate();
@@ -70,24 +75,31 @@ const AutorizacaoAutoatendimento = () => {
 
   // Carregar solicitações ao montar o componente
   useEffect(() => {
-    carregarSolicitacoes();
+    carregarSolicitacoesDoStorage();
+
+    // Listener para sincronizar mudanças do localStorage
+    const handleSolicitacoesAtualizadas = () => {
+      carregarSolicitacoesDoStorage();
+    };
+
+    window.addEventListener('solicitacoesAtualizadas', handleSolicitacoesAtualizadas);
+
+    return () => {
+      window.removeEventListener('solicitacoesAtualizadas', handleSolicitacoesAtualizadas);
+    };
   }, []);
 
-  // Aplicar filtros quando solicitações, filtroStatus ou busca mudarem
-  useEffect(() => {
-    aplicarFiltros();
-  }, [solicitacoes, filtroStatus, busca]);
-
-  const carregarSolicitacoes = () => {
-    const dados = gerarNotificacoesExemplo();
+  const carregarSolicitacoesDoStorage = () => {
+    const dados = carregarSolicitacoes();
     // Ordenar por data de solicitação (mais recentes primeiro)
-    dados.sort((a, b) => 
+    dados.sort((a, b) =>
       new Date(b.datasolicitacao).getTime() - new Date(a.datasolicitacao).getTime()
     );
     setSolicitacoes(dados);
   };
 
-  const aplicarFiltros = () => {
+  // Aplicar filtros quando solicitações, filtroStatus ou busca mudarem
+  useEffect(() => {
     let resultado = [...solicitacoes];
 
     // Filtrar por status
@@ -98,7 +110,7 @@ const AutorizacaoAutoatendimento = () => {
     // Filtrar por busca
     if (busca.trim()) {
       const buscaLower = busca.toLowerCase();
-      resultado = resultado.filter(s => 
+      resultado = resultado.filter(s =>
         s.matricula.toLowerCase().includes(buscaLower) ||
         s.colaborador.toLowerCase().includes(buscaLower) ||
         s.solicitacao.toLowerCase().includes(buscaLower) ||
@@ -107,7 +119,7 @@ const AutorizacaoAutoatendimento = () => {
     }
 
     setSolicitacoesFiltradas(resultado);
-  };
+  }, [solicitacoes, filtroStatus, busca]);
 
   const formatarData = (dataStr: string): string => {
     const data = new Date(dataStr);
@@ -167,23 +179,17 @@ const AutorizacaoAutoatendimento = () => {
 
     if (!solicitacaoSelecionada || !tipoAvaliacao) return;
 
-    const novoStatus = tipoAvaliacao === 'aprovar' ? 'Aprovada' : 'Rejeitada';
-    const dataAtual = new Date().toISOString().split('T')[0];
+    const avaliadorNome = 'Emanuel Silva'; // Nome do usuário logado
 
-    // Atualizar a solicitação
-    setSolicitacoes(prev => 
-      prev.map(s => 
-        s.id === solicitacaoSelecionada.id 
-          ? { 
-              ...s, 
-              status: novoStatus as 'Aprovada' | 'Rejeitada',
-              justificativaAvaliacao: justificativa,
-              avaliadorNome: 'Emanuel Silva', // Nome do usuário logado
-              dataAvaliacao: dataAtual
-            } 
-          : s
-      )
-    );
+    // Salvar no localStorage usando as funções utilitárias
+    if (tipoAvaliacao === 'aprovar') {
+      aprovarSolicitacao(solicitacaoSelecionada.id, justificativa, avaliadorNome);
+    } else {
+      rejeitarSolicitacao(solicitacaoSelecionada.id, justificativa, avaliadorNome);
+    }
+
+    // Recarregar as solicitações do localStorage
+    carregarSolicitacoesDoStorage();
 
     toast({
       title: tipoAvaliacao === 'aprovar' ? "Solicitação Aprovada" : "Solicitação Rejeitada",

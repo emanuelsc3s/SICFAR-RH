@@ -54,21 +54,22 @@ const MeusAtestados = () => {
     carregarAtestados();
   }, []);
 
-  // Aplicar filtros quando atestados, filtroStatus ou busca mudarem
-  useEffect(() => {
-    aplicarFiltros();
-  }, [atestados, filtroStatus, busca]);
-
   const carregarAtestados = () => {
     const atestadosCarregados = getAtestados();
     // Ordenar por data de envio (mais recentes primeiro)
-    atestadosCarregados.sort((a, b) => 
+    atestadosCarregados.sort((a, b) =>
       new Date(b.dataEnvio).getTime() - new Date(a.dataEnvio).getTime()
     );
     setAtestados(atestadosCarregados);
   };
 
-  const aplicarFiltros = () => {
+  const formatarData = (dataISO: string): string => {
+    const data = new Date(dataISO);
+    return data.toLocaleDateString('pt-BR');
+  };
+
+  // Aplicar filtros quando atestados, filtroStatus ou busca mudarem
+  useEffect(() => {
     let resultado = [...atestados];
 
     // Filtrar por status
@@ -79,7 +80,7 @@ const MeusAtestados = () => {
     // Filtrar por busca
     if (busca.trim()) {
       const buscaLower = busca.toLowerCase();
-      resultado = resultado.filter(a => 
+      resultado = resultado.filter(a =>
         a.id.toLowerCase().includes(buscaLower) ||
         a.motivo.toLowerCase().includes(buscaLower) ||
         formatarData(a.dataInicio).includes(buscaLower) ||
@@ -88,12 +89,7 @@ const MeusAtestados = () => {
     }
 
     setAtestadosFiltrados(resultado);
-  };
-
-  const formatarData = (dataISO: string): string => {
-    const data = new Date(dataISO);
-    return data.toLocaleDateString('pt-BR');
-  };
+  }, [atestados, filtroStatus, busca]);
 
   const formatarDataHora = (dataISO: string): string => {
     const data = new Date(dataISO);

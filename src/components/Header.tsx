@@ -6,13 +6,35 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { NotificacaoSolicitacao, gerarNotificacoesExemplo } from "@/types/notificacao";
+import { useState, useEffect } from "react";
+import { NotificacaoSolicitacao } from "@/types/notificacao";
+import { carregarSolicitacoes, marcarTodasComoLidas } from "@/utils/solicitacoesStorage";
 
 const Header = () => {
   const navigate = useNavigate();
-  const [notificacoes, setNotificacoes] = useState<NotificacaoSolicitacao[]>(gerarNotificacoesExemplo());
+  const [notificacoes, setNotificacoes] = useState<NotificacaoSolicitacao[]>([]);
   const [isNotificacoesOpen, setIsNotificacoesOpen] = useState(false);
+
+  // Carregar notificações do localStorage ao montar o componente
+  useEffect(() => {
+    carregarNotificacoesDoStorage();
+
+    // Listener para sincronizar mudanças do localStorage
+    const handleSolicitacoesAtualizadas = () => {
+      carregarNotificacoesDoStorage();
+    };
+
+    window.addEventListener('solicitacoesAtualizadas', handleSolicitacoesAtualizadas);
+
+    return () => {
+      window.removeEventListener('solicitacoesAtualizadas', handleSolicitacoesAtualizadas);
+    };
+  }, []);
+
+  const carregarNotificacoesDoStorage = () => {
+    const dados = carregarSolicitacoes();
+    setNotificacoes(dados);
+  };
 
   // Contar notificações não lidas
   const notificacoesNaoLidas = notificacoes.filter(n => !n.lida).length;
@@ -166,7 +188,8 @@ const Header = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      setNotificacoes(prev => prev.map(n => ({ ...n, lida: true })));
+                      marcarTodasComoLidas();
+                      carregarNotificacoesDoStorage();
                     }}
                     className="text-xs"
                   >
