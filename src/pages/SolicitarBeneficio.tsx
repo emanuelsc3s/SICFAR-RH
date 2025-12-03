@@ -41,6 +41,12 @@ const SolicitarBeneficio = () => {
   const [colaborador, setColaborador] = useState<ColaboradorData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentVoucherNumber, setCurrentVoucherNumber] = useState<string>("");
+  // Estado para armazenar múltiplos vouchers gerados (um para cada benefício)
+  const [vouchersGerados, setVouchersGerados] = useState<Array<{
+    voucherNumber: string;
+    beneficio: typeof beneficios[0];
+    qrCodeUrl: string;
+  }>>([]);
 
   // Form data for step 2
   const [formData, setFormData] = useState({
@@ -181,14 +187,20 @@ const SolicitarBeneficio = () => {
     return `VOU${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`;
   };
 
-  const generateQRCode = async (voucherNumber: string) => {
+  /**
+   * Gera QR Code para um voucher específico
+   * @param voucherNumber - Número único do voucher
+   * @param beneficioId - ID do benefício associado ao voucher
+   * @returns URL do QR Code em formato data URL ou string vazia em caso de erro
+   */
+  const generateQRCodeForVoucher = async (voucherNumber: string, beneficioId: string): Promise<string> => {
     const qrData = JSON.stringify({
       voucher: voucherNumber,
-      beneficios: selectedBeneficios,
+      beneficio: beneficioId, // Cada voucher agora tem apenas um benefício
       data: new Date().toISOString(),
       empresa: "Farmace Benefícios"
     });
-    
+
     try {
       const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
         width: 200,
@@ -198,10 +210,17 @@ const SolicitarBeneficio = () => {
           light: '#FFFFFF'
         }
       });
-      setQrCodeUrl(qrCodeDataUrl);
+      return qrCodeDataUrl;
     } catch (error) {
       console.error('Erro ao gerar QR Code:', error);
+      return '';
     }
+  };
+
+  // Mantém a função original para compatibilidade (usada na visualização do voucher)
+  const generateQRCode = async (voucherNumber: string) => {
+    const qrCodeDataUrl = await generateQRCodeForVoucher(voucherNumber, selectedBeneficios[0] || '');
+    setQrCodeUrl(qrCodeDataUrl);
   };
 
   // Função para salvar voucher no localStorage usando o utilitário
@@ -224,8 +243,34 @@ const SolicitarBeneficio = () => {
     return sucesso;
   };
 
+  /**
+   * =====================================================================
+   * FUNÇÃO PRINCIPAL: handleConfirmSolicitation
+   * =====================================================================
+   *
+   * LÓGICA DE GERAÇÃO DE VOUCHERS INDIVIDUAIS:
+   * - Para cada benefício selecionado pelo usuário, é gerado UM voucher separado
+   * - Isso significa que se o usuário selecionar 3 benefícios, serão gerados 3 vouchers
+   * - Cada voucher possui seu próprio número único, QR Code e PDF
+   * - Cada voucher é salvo individualmente no localStorage
+   * - Cada voucher é enviado em um e-mail separado para o colaborador
+   *
+   * EXEMPLO:
+   * Se o usuário seleciona: Vale Gás + Vale Farmácia + Vale Transporte
+   * Serão gerados:
+   *   - Voucher VOU12345601 → Vale Gás (PDF + Email)
+   *   - Voucher VOU12345602 → Vale Farmácia (PDF + Email)
+   *   - Voucher VOU12345603 → Vale Transporte (PDF + Email)
+   *
+   * =====================================================================
+   */
   const handleConfirmSolicitation = async () => {
     console.log('🚀 Iniciando handleConfirmSolicitation...');
+    console.log('📋 MODO: Geração de vouchers INDIVIDUAIS (um por benefício)');
+
+    // ===================================================================
+    // BLOCO DE VALIDAÇÕES
+    // ===================================================================
 
     // Validação 1: Verifica se há dados do colaborador
     if (!colaborador) {
@@ -254,166 +299,218 @@ const SolicitarBeneficio = () => {
       return;
     }
     console.log('✅ Validação 3 passou: Benefícios selecionados', selectedBeneficios);
+    console.log(`📊 Total de benefícios: ${selectedBeneficios.length} → Serão gerados ${selectedBeneficios.length} voucher(s) individual(is)`);
 
     console.log('⏳ Iniciando processamento...');
     setIsProcessing(true);
 
+    // ===================================================================
+    // INÍCIO DO PROCESSAMENTO DE VOUCHERS INDIVIDUAIS
+    // ===================================================================
+
     try {
-      // 1. Gera o número do voucher
-      console.log('📝 Passo 1: Gerando número do voucher...');
-      const voucherNumber = generateVoucherNumber();
-      setCurrentVoucherNumber(voucherNumber);
-      console.log('✅ Voucher gerado:', voucherNumber);
+      // Array para armazenar os vouchers gerados durante o processamento
+      const vouchersProcessados: Array<{
+        voucherNumber: string;
+        beneficio: typeof beneficios[0];
+        qrCodeUrl: string;
+      }> = [];
 
-      // 2. Gera o QR Code
-      console.log('📱 Passo 2: Gerando QR Code...');
-      await generateQRCode(voucherNumber);
-      console.log('✅ QR Code gerado');
+      // Contadores para estatísticas
+      let vouchersComSucesso = 0;
+      let vouchersComErroEmail = 0;
+      let vouchersComErroGeral = 0;
 
-      // Aguarda um pouco para garantir que o QR Code foi gerado
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const now = new Date();
+      const dataValidade = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 dias de validade
 
-      // 3. Prepara os dados dos benefícios selecionados
-      console.log('📦 Passo 3: Preparando dados dos benefícios...');
-      const beneficiosSelecionados = selectedBeneficios
-        .map(id => {
-          const beneficio = beneficios.find(b => b.id === id);
-          return beneficio ? {
+      // ===================================================================
+      // LOOP: Processa CADA benefício individualmente
+      // ===================================================================
+      console.log('🔄 Iniciando loop de processamento individual de benefícios...');
+
+      for (let index = 0; index < selectedBeneficios.length; index++) {
+        const beneficioId = selectedBeneficios[index];
+        const beneficio = beneficios.find(b => b.id === beneficioId);
+
+        if (!beneficio) {
+          console.warn(`⚠️ Benefício não encontrado: ${beneficioId}`);
+          continue;
+        }
+
+        console.log(`\n📦 [${index + 1}/${selectedBeneficios.length}] Processando benefício: ${beneficio.title}`);
+
+        try {
+          // -----------------------------------------------------------------
+          // Passo 1: Gerar número único do voucher para este benefício
+          // -----------------------------------------------------------------
+          const voucherNumber = generateVoucherNumber();
+          console.log(`  📝 Número do voucher gerado: ${voucherNumber}`);
+
+          // -----------------------------------------------------------------
+          // Passo 2: Gerar QR Code específico para este voucher/benefício
+          // -----------------------------------------------------------------
+          const qrCodeUrlIndividual = await generateQRCodeForVoucher(voucherNumber, beneficioId);
+          console.log(`  📱 QR Code gerado para: ${beneficio.title}`);
+
+          // -----------------------------------------------------------------
+          // Passo 3: Calcular o valor individual do benefício
+          // -----------------------------------------------------------------
+          const valorMatch = beneficio.value.match(/[\d.,]+/);
+          const valorBeneficio = valorMatch
+            ? parseFloat(valorMatch[0].replace(',', '.'))
+            : 0;
+          console.log(`  💰 Valor do benefício: R$ ${valorBeneficio.toFixed(2)}`);
+
+          // -----------------------------------------------------------------
+          // Passo 4: Preparar dados do voucher individual para localStorage
+          // -----------------------------------------------------------------
+          const beneficioFormatado = {
             id: beneficio.id,
             title: beneficio.title,
             description: beneficio.description,
             value: beneficio.value,
             icon: beneficio.icon
-          } : null;
-        })
-        .filter((b): b is NonNullable<typeof b> => b !== null);
-      console.log('✅ Benefícios preparados:', beneficiosSelecionados);
+          };
 
-      // 4. Calcula o valor total dos benefícios
-      console.log('💰 Passo 4: Calculando valor total...');
-      const valorTotal = beneficiosSelecionados.reduce((total, beneficio) => {
-        // Extrai o valor numérico do campo value (ex: "R$ 125,00" -> 125.00)
-        const valorMatch = beneficio.value.match(/[\d.,]+/);
-        if (valorMatch) {
-          const valorNumerico = parseFloat(valorMatch[0].replace(',', '.'));
-          return total + (isNaN(valorNumerico) ? 0 : valorNumerico);
-        }
-        return total;
-      }, 0);
-      console.log('✅ Valor total calculado: R$', valorTotal);
+          const voucherDataToSave: VoucherEmitido = {
+            id: voucherNumber,
+            funcionario: colaborador.nome,
+            cpf: colaborador.cpf,
+            valor: valorBeneficio,
+            dataResgate: "", // Voucher ainda não foi resgatado
+            horaResgate: "", // Voucher ainda não foi resgatado
+            beneficios: [beneficio.title], // Apenas UM benefício por voucher
+            parceiro: beneficio.title, // Nome do benefício como parceiro
+            status: 'emitido',
+            dataValidade: dataValidade.toLocaleDateString('pt-BR')
+          };
 
-      // 5. Prepara dados do voucher para salvar no localStorage
-      console.log('💾 Passo 5: Preparando dados para localStorage...');
-      const now = new Date();
-      const dataValidade = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 dias de validade
+          // -----------------------------------------------------------------
+          // Passo 5: Salvar voucher individual no localStorage
+          // -----------------------------------------------------------------
+          const salvouComSucesso = saveVoucherToLocalStorage(voucherDataToSave);
+          console.log(salvouComSucesso
+            ? `  💾 Voucher salvo no localStorage`
+            : `  ❌ Erro ao salvar voucher no localStorage`);
 
-      const voucherDataToSave: VoucherEmitido = {
-        id: voucherNumber,
-        funcionario: colaborador.nome,
-        cpf: colaborador.cpf,
-        valor: valorTotal,
-        dataResgate: "", // Em branco - voucher ainda não foi resgatado
-        horaResgate: "", // Em branco - voucher ainda não foi resgatado
-        beneficios: beneficiosSelecionados.map(b => b.title),
-        parceiro: beneficiosSelecionados.length > 0 ? beneficiosSelecionados[0].title : 'Múltiplos Benefícios',
-        status: 'emitido',
-        dataValidade: dataValidade.toLocaleDateString('pt-BR')
-      };
-      console.log('✅ Dados preparados:', voucherDataToSave);
-
-      // 6. Salva o voucher no localStorage
-      console.log('💾 Passo 6: Salvando no localStorage...');
-      const salvouComSucesso = saveVoucherToLocalStorage(voucherDataToSave);
-      console.log(salvouComSucesso ? '✅ Salvo no localStorage com sucesso' : '❌ Erro ao salvar no localStorage');
-
-      // 7. Gera o PDF do voucher
-      console.log('📄 Passo 7: Gerando PDF do voucher...');
-      const pdfBase64 = await generateVoucherPDF({
-        voucherNumber,
-        beneficios: beneficiosSelecionados,
-        formData,
-        qrCodeUrl: qrCodeUrl || '',
-        colaborador: {
-          nome: colaborador.nome,
-          matricula: colaborador.matricula,
-          email: colaborador.email
-        }
-      });
-      console.log('✅ PDF gerado com sucesso');
-
-      // 8. Envia o email com o PDF anexado
-      console.log('📧 Passo 8: Enviando e-mail...');
-      toast.loading("Enviando voucher por e-mail...", { id: 'sending-email' });
-
-      try {
-        console.log('🌐 Enviando requisição para o servidor backend...');
-        const response = await fetch('http://localhost:3001/api/send-voucher-email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            destinatario: colaborador.email,
-            nomeDestinatario: colaborador.nome,
+          // -----------------------------------------------------------------
+          // Passo 6: Gerar PDF do voucher individual (apenas 1 benefício)
+          // -----------------------------------------------------------------
+          const pdfBase64 = await generateVoucherPDF({
             voucherNumber,
-            beneficios: beneficiosSelecionados,
-            pdfBase64,
-            formData
-          }),
+            beneficios: [beneficioFormatado], // Array com apenas 1 benefício
+            formData,
+            qrCodeUrl: qrCodeUrlIndividual,
+            colaborador: {
+              nome: colaborador.nome,
+              matricula: colaborador.matricula,
+              email: colaborador.email
+            }
+          });
+          console.log(`  📄 PDF gerado para: ${beneficio.title}`);
+
+          // -----------------------------------------------------------------
+          // Passo 7: Enviar e-mail individual com o voucher deste benefício
+          // -----------------------------------------------------------------
+          console.log(`  📧 Enviando e-mail para voucher: ${voucherNumber}...`);
+
+          try {
+            const response = await fetch('http://localhost:3001/api/send-voucher-email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                destinatario: colaborador.email,
+                nomeDestinatario: colaborador.nome,
+                voucherNumber,
+                beneficios: [beneficioFormatado], // Apenas 1 benefício no email
+                pdfBase64,
+                formData
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error(`Erro HTTP: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+              console.log(`  ✅ E-mail enviado com sucesso para voucher: ${voucherNumber}`);
+              vouchersComSucesso++;
+            } else {
+              throw new Error(result.message || 'Erro ao enviar e-mail');
+            }
+
+          } catch (emailError) {
+            // Erro no envio de e-mail não impede a geração do voucher
+            console.warn(`  ⚠️ Erro ao enviar e-mail do voucher ${voucherNumber}:`, emailError);
+            vouchersComErroEmail++;
+          }
+
+          // Adiciona o voucher processado à lista de vouchers gerados
+          vouchersProcessados.push({
+            voucherNumber,
+            beneficio,
+            qrCodeUrl: qrCodeUrlIndividual
+          });
+
+        } catch (beneficioError) {
+          // Erro no processamento individual de um benefício
+          console.error(`  ❌ Erro ao processar benefício ${beneficio.title}:`, beneficioError);
+          vouchersComErroGeral++;
+        }
+      }
+
+      // ===================================================================
+      // FINALIZAÇÃO: Resumo e feedback para o usuário
+      // ===================================================================
+      console.log('\n📊 === RESUMO DO PROCESSAMENTO ===');
+      console.log(`  ✅ Vouchers com sucesso total: ${vouchersComSucesso}`);
+      console.log(`  ⚠️ Vouchers com erro de e-mail: ${vouchersComErroEmail}`);
+      console.log(`  ❌ Vouchers com erro geral: ${vouchersComErroGeral}`);
+      console.log(`  📦 Total de vouchers gerados: ${vouchersProcessados.length}`);
+
+      // Atualiza o estado com os vouchers gerados
+      setVouchersGerados(vouchersProcessados);
+
+      // Define o primeiro voucher como o "principal" para exibição
+      if (vouchersProcessados.length > 0) {
+        setCurrentVoucherNumber(vouchersProcessados[0].voucherNumber);
+        setQrCodeUrl(vouchersProcessados[0].qrCodeUrl);
+      }
+
+      // Exibe feedback apropriado ao usuário
+      if (vouchersComSucesso > 0) {
+        toast.success(`${vouchersProcessados.length} voucher(s) gerado(s) com sucesso! 🎉`, {
+          description: vouchersComErroEmail > 0
+            ? `${vouchersComSucesso} enviado(s) por e-mail. ${vouchersComErroEmail} não enviado(s).`
+            : `Todos os e-mails foram enviados para: ${colaborador.email}`,
+          duration: 5000
         });
-        console.log('📡 Resposta recebida do servidor:', response.status, response.statusText);
+      } else if (vouchersProcessados.length > 0) {
+        toast.warning(`${vouchersProcessados.length} voucher(s) gerado(s), mas nenhum e-mail foi enviado.`, {
+          description: "Os vouchers estão disponíveis para visualização.",
+          duration: 5000
+        });
+      } else {
+        toast.error("Nenhum voucher foi gerado. Por favor, tente novamente.", {
+          duration: 5000
+        });
+      }
 
-        // Verifica se a resposta HTTP foi bem-sucedida
-        if (!response.ok) {
-          throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        console.log('📦 Resultado do servidor:', result);
-
-        if (result.success) {
-          toast.success("Voucher enviado por e-mail com sucesso! 🎉", {
-            id: 'sending-email',
-            description: `E-mail enviado para: ${colaborador.email}`,
-            duration: 5000
-          });
-          console.log('✅ E-mail enviado com sucesso para:', colaborador.email);
-          setShowVoucher(true);
-        } else {
-          throw new Error(result.message || 'Erro ao enviar e-mail');
-        }
-
-      } catch (emailError) {
-        // Tratamento específico para erros de envio de e-mail
-        console.error('❌ Erro ao enviar e-mail:', emailError);
-
-        // Verifica se é erro de conexão com o servidor
-        if (emailError instanceof TypeError && emailError.message.includes('fetch')) {
-          console.warn('⚠️ Servidor backend não está acessível');
-          toast.error("Servidor de e-mail indisponível", {
-            id: 'sending-email',
-            description: "O voucher será exibido, mas não foi enviado por e-mail. Verifique se o servidor backend está rodando.",
-            duration: 7000
-          });
-        } else {
-          console.warn('⚠️ Erro ao processar e-mail no servidor');
-          toast.error("Erro ao enviar e-mail", {
-            id: 'sending-email',
-            description: "O voucher será exibido, mas não foi enviado por e-mail. Tente novamente mais tarde.",
-            duration: 7000
-          });
-        }
-
-        // Mesmo com erro no e-mail, mostra o voucher
-        console.log('📄 Exibindo voucher mesmo com erro no e-mail');
+      // Mostra a tela de vouchers se pelo menos um foi gerado
+      if (vouchersProcessados.length > 0) {
         setShowVoucher(true);
       }
 
     } catch (error) {
-      // Tratamento de erros gerais (geração de voucher, QR Code, PDF)
+      // Tratamento de erros gerais não capturados
       console.error('❌ Erro GERAL ao processar solicitação:', error);
       toast.error("Erro ao processar solicitação", {
-        description: "Ocorreu um erro ao gerar o voucher. Por favor, tente novamente.",
+        description: "Ocorreu um erro ao gerar os vouchers. Por favor, tente novamente.",
         duration: 5000
       });
     } finally {
@@ -527,11 +624,17 @@ const SolicitarBeneficio = () => {
       </header>
 
       {showVoucher ? (
-        /* Voucher Screen */
+        /* ===================================================================
+         * TELA DE VOUCHERS GERADOS
+         * ===================================================================
+         * Esta tela exibe TODOS os vouchers individuais gerados.
+         * Cada benefício selecionado resultou em um voucher separado,
+         * então exibimos cada um em um card individual.
+         * =================================================================== */
         <div className="max-w-4xl mx-auto p-4 print:p-2">
           <div className="mb-4 print:hidden">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => setShowVoucher(false)}
               className="flex items-center text-gray-600 hover:text-gray-800 p-0 h-auto font-normal"
             >
@@ -540,185 +643,196 @@ const SolicitarBeneficio = () => {
             </Button>
           </div>
 
-          {/* Voucher Card */}
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden print:shadow-none print:rounded-none">
-            {/* Header - Blue gradient like the primary theme */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 text-white print:px-4 print:py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center print:w-8 print:h-8">
-                    <Plus className="w-5 h-5 text-white print:w-4 print:h-4" />
+          {/* Header com resumo dos vouchers gerados */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg px-6 py-4 text-white mb-6 print:px-4 print:py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center print:w-8 print:h-8">
+                  <Plus className="w-5 h-5 text-white print:w-4 print:h-4" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold print:text-lg">
+                    {/* Exibe título singular ou plural conforme quantidade de vouchers */}
+                    {vouchersGerados.length === 1
+                      ? "Voucher Gerado"
+                      : `${vouchersGerados.length} Vouchers Gerados`}
+                  </h1>
+                  <p className="text-blue-100 text-sm">Farmace Benefícios</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-blue-100 text-xs">Data de geração</p>
+                <p className="text-sm font-semibold">{new Date().toLocaleDateString("pt-BR")}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Mensagem de sucesso */}
+          <div className="text-center mb-6 print:mb-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-2 print:text-lg print:mb-1">
+              Parabéns! {vouchersGerados.length === 1 ? "Seu voucher foi aprovado!" : "Seus vouchers foram aprovados!"}
+            </h2>
+            <p className="text-gray-600 text-sm">
+              {/* Informação sobre vouchers individuais */}
+              {vouchersGerados.length > 1
+                ? `Foram gerados ${vouchersGerados.length} vouchers individuais - um para cada benefício selecionado.`
+                : "Utilize as informações abaixo para resgatar seu benefício."}
+            </p>
+          </div>
+
+          {/* ===================================================================
+           * LISTA DE VOUCHERS INDIVIDUAIS
+           * Cada voucher é exibido em um card separado com seu próprio
+           * número, QR Code e informações do benefício associado.
+           * =================================================================== */}
+          <div className="space-y-4">
+            {vouchersGerados.map((voucher, index) => {
+              const IconComponent = voucher.beneficio.icon;
+              return (
+                <div
+                  key={voucher.voucherNumber}
+                  className="bg-white rounded-lg shadow-lg overflow-hidden print:shadow-none print:rounded-none print:break-inside-avoid"
+                >
+                  {/* Indicador de número do voucher na sequência */}
+                  {vouchersGerados.length > 1 && (
+                    <div className="bg-blue-600 px-4 py-1 text-white text-sm print:hidden">
+                      Voucher {index + 1} de {vouchersGerados.length}
+                    </div>
+                  )}
+
+                  {/* Card do Voucher Individual */}
+                  <div className="p-6 print:p-4">
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border-2 border-blue-200 print:p-3">
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Lado esquerdo - Informações do voucher */}
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-600 mb-1">Número do Voucher</p>
+                          <p className="text-xl font-bold text-blue-600 mb-3 print:text-lg">{voucher.voucherNumber}</p>
+
+                          {/* Informações do benefício associado */}
+                          <div className="flex items-center space-x-3 mb-3 print:space-x-2">
+                            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center print:w-8 print:h-8">
+                              <IconComponent className="w-5 h-5 text-white print:w-4 print:h-4" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">{voucher.beneficio.title}</p>
+                              <p className="text-sm text-gray-600 print:hidden">{voucher.beneficio.description}</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <span className="text-gray-600">Valor:</span>
+                              <span className="font-semibold text-blue-600 ml-2">{voucher.beneficio.value}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Status:</span>
+                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium ml-2">
+                                Aprovado
+                              </span>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-gray-600">Validade:</span>
+                              <span className="font-semibold text-gray-900 ml-2">
+                                {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-BR")}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Lado direito - QR Code individual */}
+                        <div className="flex flex-col items-center">
+                          <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 print:p-1">
+                            {voucher.qrCodeUrl ? (
+                              <img
+                                src={voucher.qrCodeUrl}
+                                alt={`QR Code do Voucher ${voucher.voucherNumber}`}
+                                className="w-24 h-24 print:w-20 print:h-20"
+                              />
+                            ) : (
+                              <div className="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg print:w-20 print:h-20">
+                                <QrCode className="w-12 h-12 text-gray-400 print:w-10 print:h-10" />
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1 text-center">
+                            Escaneie para validar
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Detalhes da Solicitação (exibido uma única vez para todos os vouchers) */}
+          {(formData.justificativa || formData.urgencia || formData.informacoesAdicionais) && (
+            <div className="bg-white rounded-lg shadow-lg p-6 mt-4 print:shadow-none print:p-4">
+              <h4 className="font-semibold text-gray-900 mb-3 print:text-sm print:mb-2">Detalhes da Solicitação</h4>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                {formData.urgencia && (
                   <div>
-                    <h1 className="text-xl font-bold print:text-lg">Voucher Gerado</h1>
-                    <p className="text-blue-100 text-sm">Farmace Benefícios</p>
+                    <p className="text-gray-600 mb-1">Urgência:</p>
+                    <p className="text-gray-900 font-medium">{formData.urgencia}</p>
                   </div>
+                )}
+                <div>
+                  <p className="text-gray-600 mb-1">Data:</p>
+                  <p className="text-gray-900 font-medium">{new Date().toLocaleDateString("pt-BR")}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-blue-100 text-xs">Data de geração</p>
-                  <p className="text-sm font-semibold">{new Date().toLocaleDateString("pt-BR")}</p>
-                </div>
+                {formData.justificativa && (
+                  <div className="col-span-2 print:hidden">
+                    <p className="text-gray-600 mb-1">Justificativa:</p>
+                    <p className="text-gray-900 text-xs">{formData.justificativa}</p>
+                  </div>
+                )}
+                {formData.informacoesAdicionais && (
+                  <div className="col-span-2 print:hidden">
+                    <p className="text-gray-600 mb-1">Informações Adicionais:</p>
+                    <p className="text-gray-900 text-xs">{formData.informacoesAdicionais}</p>
+                  </div>
+                )}
               </div>
             </div>
+          )}
 
-            {/* Voucher Details */}
-            <div className="p-6 print:p-4">
-              <div className="text-center mb-6 print:mb-4">
-                <h2 className="text-xl font-bold text-gray-900 mb-2 print:text-lg print:mb-1">
-                  Parabéns! Seu voucher foi aprovado!
-                </h2>
-                <p className="text-gray-600 text-sm">
-                  Utilize as informações abaixo para resgatar seus benefícios
-                </p>
-              </div>
-
-              {/* Main Voucher Info - Compact Layout */}
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border-2 border-blue-200 mb-6 print:mb-4 print:p-3">
-                <div className="flex items-start justify-between gap-4">
-                  {/* Left side - Voucher info */}
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-600 mb-1">Número do Voucher</p>
-                    <p className="text-2xl font-bold text-blue-600 mb-3 print:text-xl">{currentVoucherNumber}</p>
-                    
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="text-gray-600">Benefícios:</span>
-                        <span className="font-semibold text-gray-900 ml-2">{selectedBeneficios.length}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Status:</span>
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium ml-2">
-                          Aprovado
-                        </span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-gray-600">Validade:</span>
-                        <span className="font-semibold text-gray-900 ml-2">
-                          {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-BR")}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Right side - QR Code */}
-                  <div className="flex flex-col items-center">
-                    <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 print:p-1">
-                      {qrCodeUrl ? (
-                        <img 
-                          src={qrCodeUrl} 
-                          alt="QR Code do Voucher" 
-                          className="w-24 h-24 print:w-20 print:h-20"
-                        />
-                      ) : (
-                        <div className="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg print:w-20 print:h-20">
-                          <QrCode className="w-12 h-12 text-gray-400 print:w-10 print:h-10" />
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1 text-center">
-                      Escaneie para validar
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Benefits List - Compact */}
-              <div className="mb-6 print:mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3 print:text-base print:mb-2">Benefícios Aprovados</h3>
-                <div className="space-y-2">
-                  {selectedBeneficios.map((beneficioId) => {
-                    const beneficio = beneficios.find(b => b.id === beneficioId);
-                    if (!beneficio) return null;
-                    const IconComponent = beneficio.icon;
-                    
-                    return (
-                      <div key={beneficioId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg print:p-2">
-                        <div className="flex items-center space-x-3 print:space-x-2">
-                          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center print:w-6 print:h-6">
-                            <IconComponent className="w-4 h-4 text-white print:w-3 print:h-3" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900 text-sm">{beneficio.title}</p>
-                            <p className="text-xs text-gray-600 print:hidden">{beneficio.description}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-blue-600 text-sm">{beneficio.value}</p>
-                          <p className="text-xs text-gray-500">Disponível</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Request Details - Compact */}
-              {(formData.justificativa || formData.urgencia || formData.informacoesAdicionais) && (
-                <div className="border-t border-gray-200 pt-4 mb-6 print:pt-3 print:mb-4">
-                  <h4 className="font-semibold text-gray-900 mb-3 print:text-sm print:mb-2">Detalhes da Solicitação</h4>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    {formData.urgencia && (
-                      <div>
-                        <p className="text-gray-600 mb-1">Urgência:</p>
-                        <p className="text-gray-900 font-medium">{formData.urgencia}</p>
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-gray-600 mb-1">Data:</p>
-                      <p className="text-gray-900 font-medium">{new Date().toLocaleDateString("pt-BR")}</p>
-                    </div>
-                    {formData.justificativa && (
-                      <div className="col-span-2 print:hidden">
-                        <p className="text-gray-600 mb-1">Justificativa:</p>
-                        <p className="text-gray-900 text-xs">{formData.justificativa}</p>
-                      </div>
-                    )}
-                    {formData.informacoesAdicionais && (
-                      <div className="col-span-2 print:hidden">
-                        <p className="text-gray-600 mb-1">Informações Adicionais:</p>
-                        <p className="text-gray-900 text-xs">{formData.informacoesAdicionais}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 print:hidden">
-                <Button 
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                  onClick={() => window.print()}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Imprimir Voucher
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => navigate("/portalbeneficio")}
-                >
-                  <Home className="w-4 h-4 mr-2" />
-                  Voltar ao Portal
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    setShowVoucher(false);
-                    setCurrentStep(1);
-                    setSelectedBeneficios([]);
-                    setFormData({
-                      justificativa: "",
-                      urgencia: "",
-                      informacoesAdicionais: ""
-                    });
-                  }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nova Solicitação
-                </Button>
-              </div>
-            </div>
+          {/* Botões de Ação */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-6 print:hidden">
+            <Button
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => window.print()}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Imprimir {vouchersGerados.length === 1 ? "Voucher" : "Vouchers"}
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => navigate("/portalbeneficio")}
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Voltar ao Portal
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                setShowVoucher(false);
+                setCurrentStep(1);
+                setSelectedBeneficios([]);
+                setVouchersGerados([]); // Limpa os vouchers gerados
+                setFormData({
+                  justificativa: "",
+                  urgencia: "",
+                  informacoesAdicionais: ""
+                });
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Solicitação
+            </Button>
           </div>
         </div>
       ) : (
