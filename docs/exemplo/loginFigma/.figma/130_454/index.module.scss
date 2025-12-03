@@ -1,0 +1,35 @@
+* {
+  box-sizing: border-box;
+}
+
+.group436 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0.5;
+  padding: 1px;
+  width: 267px;
+  height: 267px;
+
+  .autoWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: stretch;
+
+    .ellipse {
+      border: 1px solid #56aceb;
+      border-radius: 50%;
+      width: 9px;
+      height: 9px;
+    }
+
+    .ellipse2 {
+      margin-top: 17px;
+      border: 1px solid #56aceb;
+      border-radius: 50%;
+      width: 9px;
+      height: 9px;
+    }
+  }
+}

@@ -11,7 +11,6 @@ import TileCard from "@/components/TileCard";
 import BirthdayCard from "@/components/BirthdayCard";
 import AnnouncementsCard from "@/components/AnnouncementsCard";
 import NewsCard from "@/components/NewsCard";
-import QuickStats from "@/components/QuickStats";
 import SystemStatus from "@/components/SystemStatus";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -161,9 +160,6 @@ const Index = () => {
       <Header />
       
       <main className="container mx-auto px-6 py-8">
-        {/* Quick Stats */}
-        <QuickStats />
-        
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Main Content - Tiles */}
           <div className="lg:col-span-3">
