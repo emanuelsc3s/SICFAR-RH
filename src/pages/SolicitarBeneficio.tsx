@@ -20,6 +20,7 @@ import QRCode from "qrcode";
 import { toast } from "sonner";
 import { generateVoucherPDF } from "@/utils/pdfGenerator";
 import { salvarVoucherEmitido, type VoucherEmitido } from "@/utils/voucherStorage";
+import { supabase } from "@/lib/supabase";
 
 // Interface para os dados do colaborador
 interface ColaboradorData {
@@ -78,9 +79,25 @@ const SolicitarBeneficio = () => {
   };
 
   // Função para fazer logout
-  const handleLogout = () => {
-    localStorage.removeItem('colaboradorLogado');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      // Faz logout no Supabase
+      await supabase.auth.signOut();
+
+      // Remove dados do localStorage
+      localStorage.removeItem('colaboradorLogado');
+
+      console.log("✅ Logout realizado com sucesso");
+
+      // Redireciona para login
+      navigate('/login');
+    } catch (error) {
+      console.error("❌ Erro ao fazer logout:", error);
+
+      // Mesmo com erro, remove dados locais e redireciona
+      localStorage.removeItem('colaboradorLogado');
+      navigate('/login');
+    }
   };
 
   // Carregar dados do colaborador do localStorage

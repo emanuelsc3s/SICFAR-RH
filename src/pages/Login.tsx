@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { User, Lock, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,122 +13,155 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import funcionariosData from "../../data/funcionarios.json";
+import { supabase } from "@/lib/supabase";
+import { AuthError } from "@supabase/supabase-js";
 // Imagem hero do login
 import loginHero from "@/assets/LisPortalRH.png";
 
-// Interface para os dados do funcionário
-interface Funcionario {
-  MATRICULA: string;
-  NOME: string;
-  CPF: string;
-  NASCIMENTO: string;
-  EMAIL: string;
+// Interface para dados de login
+interface LoginFormData {
+  email: string;
+  password: string;
 }
 
-// Função para gerar a senha esperada baseada no CPF e data de nascimento
-const gerarSenha = (cpf: string, dataNascimento: string): string => {
-  // Pega os 3 últimos dígitos do CPF
-  const ultimosDigitosCPF = cpf.slice(-3);
+// Função para mapear erros do Supabase para mensagens em português
+const mapearErroSupabase = (error: AuthError): string => {
+  const errorMessages: Record<string, string> = {
+    'Invalid login credentials': 'Email ou senha incorretos',
+    'Email not confirmed': 'Email não confirmado. Verifique sua caixa de entrada',
+    'User not found': 'Usuário não encontrado',
+    'Too many requests': 'Muitas tentativas. Tente novamente mais tarde',
+    'Network request failed': 'Erro de conexão. Verifique sua internet',
+  };
 
-  // Extrai dia e mês da data de nascimento (formato: DD.MM.YYYY HH:MM)
-  const [dia, mes] = dataNascimento.split('.');
-  const ddmm = `${dia}${mes}`;
-
-  return `${ultimosDigitosCPF}${ddmm}`;
-};
-
-// Função para normalizar matrícula (remove zeros à esquerda)
-const normalizarMatricula = (matricula: string): string => {
-  return matricula.replace(/^0+/, '') || '0';
-};
-
-// Função para normalizar CPF (remove pontos, traços e espaços)
-const normalizarCPF = (cpf: string): string => {
-  return cpf.replace(/[.\-\s]/g, '');
-};
-
-// Função para detectar se o input é CPF ou matrícula
-const detectarTipoInput = (input: string): 'cpf' | 'matricula' => {
-  const inputLimpo = input.replace(/[.\-\s]/g, '');
-
-  // Se tem 11 dígitos numéricos, é CPF
-  if (/^\d{11}$/.test(inputLimpo)) {
-    return 'cpf';
+  // Verifica se a mensagem de erro está no mapeamento
+  for (const [key, value] of Object.entries(errorMessages)) {
+    if (error.message.includes(key)) {
+      return value;
+    }
   }
 
-  // Caso contrário, é matrícula
-  return 'matricula';
+  // Mensagem genérica para erros não mapeados
+  return 'Erro ao fazer login. Tente novamente';
 };
 
-// Função para buscar funcionário por matrícula OU CPF
-const buscarFuncionario = (input: string, funcionarios: Funcionario[]): Funcionario | undefined => {
-  const tipoInput = detectarTipoInput(input);
-
-  if (tipoInput === 'cpf') {
-    // Busca por CPF
-    const cpfNormalizado = normalizarCPF(input);
-    return funcionarios.find(f => normalizarCPF(f.CPF) === cpfNormalizado);
-  } else {
-    // Busca por matrícula
-    const matriculaNormalizada = normalizarMatricula(input);
-    return funcionarios.find(f => {
-      const matriculaFuncionarioNormalizada = normalizarMatricula(f.MATRICULA);
-      return matriculaFuncionarioNormalizada === matriculaNormalizada;
-    });
-  }
+// Função para validar formato de email
+const validarEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
 };
 
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [matriculaOuCpf, setMatriculaOuCpf] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Verifica se já existe uma sessão ativa ao montar o componente
+  useEffect(() => {
+    const verificarSessao = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) {
+          // Usuário já está autenticado, redireciona para página principal
+          console.log("✅ Sessão ativa encontrada, redirecionando...");
+          navigate('/solicitarbeneficio');
+        }
+      } catch (error) {
+        console.error("Erro ao verificar sessão:", error);
+      }
+    };
+
+    verificarSessao();
+  }, [navigate]);
+
+  // Função de validação do formulário
+  const validarFormulario = (): boolean => {
+    let isValid = true;
+
+    // Limpa erros anteriores
+    setEmailError("");
+    setPasswordError("");
+
+    // Valida email
+    if (!email.trim()) {
+      setEmailError("Email é obrigatório");
+      isValid = false;
+    } else if (!validarEmail(email.trim())) {
+      setEmailError("Email inválido");
+      isValid = false;
+    }
+
+    // Valida senha
+    if (!password.trim()) {
+      setPasswordError("Senha é obrigatória");
+      isValid = false;
+    } else if (password.trim().length < 6) {
+      setPasswordError("Senha deve ter no mínimo 6 caracteres");
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
+  // Função de login com Supabase
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Remove espaços em branco
-    const inputDigitado = matriculaOuCpf.trim();
-    const senhaDigitada = password.trim();
-
-    // Busca o funcionário no JSON (por matrícula OU CPF)
-    const funcionarios = funcionariosData.RecordSet as Funcionario[];
-    const funcionario = buscarFuncionario(inputDigitado, funcionarios);
-
-    if (!funcionario) {
-      // Matrícula ou CPF não encontrado
-      setShowErrorDialog(true);
+    // Valida formulário
+    if (!validarFormulario()) {
       return;
     }
 
-    // Gera a senha esperada baseada no CPF e data de nascimento
-    const senhaEsperada = gerarSenha(funcionario.CPF, funcionario.NASCIMENTO);
+    setIsLoading(true);
+    setErrorMessage("");
 
-    if (senhaDigitada === senhaEsperada) {
-      // Login bem-sucedido
-      const tipoLogin = detectarTipoInput(inputDigitado);
-      console.log("✅ Login bem-sucedido:", funcionario.NOME, "| Email:", funcionario.EMAIL, "| Tipo de login:", tipoLogin === 'cpf' ? 'CPF' : 'Matrícula');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
+      });
 
-      // Salva os dados do colaborador no localStorage
-      const colaboradorData = {
-        matricula: funcionario.MATRICULA,
-        nome: funcionario.NOME,
-        cpf: funcionario.CPF,
-        dataNascimento: funcionario.NASCIMENTO,
-        email: funcionario.EMAIL || '',
-        loginTimestamp: new Date().toISOString()
-      };
+      if (error) {
+        // Mapeia erro para mensagem em português
+        const mensagemErro = mapearErroSupabase(error);
+        setErrorMessage(mensagemErro);
+        setShowErrorDialog(true);
+        console.error("❌ Erro de autenticação:", error.message);
+        return;
+      }
 
-      localStorage.setItem('colaboradorLogado', JSON.stringify(colaboradorData));
+      if (data.user) {
+        console.log("✅ Login bem-sucedido:", data.user.email);
 
-      // Redireciona para página de solicitar benefício
-      navigate('/solicitarbeneficio');
-    } else {
-      // Senha incorreta
-      console.log("❌ Senha incorreta. Esperada:", senhaEsperada, "Digitada:", senhaDigitada);
+        // Salva dados do usuário no localStorage para compatibilidade com o resto do sistema
+        const colaboradorData = {
+          id: data.user.id,
+          email: data.user.email || '',
+          nome: data.user.user_metadata?.nome || data.user.email?.split('@')[0] || 'Usuário',
+          matricula: data.user.user_metadata?.matricula || '',
+          cpf: data.user.user_metadata?.cpf || '',
+          dataNascimento: data.user.user_metadata?.dataNascimento || '',
+          loginTimestamp: new Date().toISOString()
+        };
+
+        localStorage.setItem('colaboradorLogado', JSON.stringify(colaboradorData));
+
+        // Redireciona para página principal
+        navigate('/solicitarbeneficio');
+      }
+    } catch (error) {
+      console.error("❌ Erro inesperado ao fazer login:", error);
+      setErrorMessage("Erro inesperado. Tente novamente");
       setShowErrorDialog(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -217,7 +250,7 @@ const Login = () => {
               Acesse sua conta
             </h2>
             <p className="text-sm text-muted-foreground">
-              Entre com sua matrícula ou CPF
+              Entre com seu email e senha
             </p>
           </div>
 
@@ -225,23 +258,33 @@ const Login = () => {
           <Card className="border-border/50 shadow-lg">
             <CardContent className="pt-6">
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Campo de Matrícula ou CPF */}
+                {/* Campo de Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="matriculaOuCpf" className="text-foreground">
-                    Matrícula ou CPF
+                  <Label htmlFor="email" className="text-foreground">
+                    Email
                   </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
-                      id="matriculaOuCpf"
-                      type="text"
-                      placeholder="Digite sua matrícula ou CPF"
-                      value={matriculaOuCpf}
-                      onChange={(e) => setMatriculaOuCpf(e.target.value)}
-                      className="pl-10"
-                      required
+                      id="email"
+                      type="email"
+                      placeholder="Digite seu email"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setEmailError("");
+                      }}
+                      className={`pl-10 ${emailError ? 'border-red-500' : ''}`}
+                      disabled={isLoading}
+                      aria-describedby={emailError ? "email-error" : undefined}
                     />
                   </div>
+                  {emailError && (
+                    <p id="email-error" className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {emailError}
+                    </p>
+                  )}
                 </div>
 
                 {/* Campo de Senha */}
@@ -254,16 +297,21 @@ const Login = () => {
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="3 últimos dígitos CPF + Dia Mês Nascimento"
+                      placeholder="Digite sua senha"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10"
-                      required
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setPasswordError("");
+                      }}
+                      className={`pl-10 pr-10 ${passwordError ? 'border-red-500' : ''}`}
+                      disabled={isLoading}
+                      aria-describedby={passwordError ? "password-error" : undefined}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      disabled={isLoading}
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -272,6 +320,12 @@ const Login = () => {
                       )}
                     </button>
                   </div>
+                  {passwordError && (
+                    <p id="password-error" className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {passwordError}
+                    </p>
+                  )}
                 </div>
 
                 {/* Link Esqueceu a senha */}
@@ -288,8 +342,16 @@ const Login = () => {
                 <Button
                   type="submit"
                   className="w-full bg-primary hover:bg-primary-700 text-primary-foreground font-medium h-11"
+                  disabled={isLoading}
                 >
-                  FAZER LOGIN
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    'FAZER LOGIN'
+                  )}
                 </Button>
               </form>
             </CardContent>
@@ -319,13 +381,16 @@ const Login = () => {
                 Erro de Autenticação
               </DialogTitle>
               <DialogDescription className="text-slate-600 pt-2">
-                Matrícula/CPF ou senha incorreta. Por favor, verifique suas credenciais e tente novamente.
+                {errorMessage || "Erro ao fazer login. Por favor, verifique suas credenciais e tente novamente."}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="sm:justify-center">
               <Button
                 type="button"
-                onClick={() => setShowErrorDialog(false)}
+                onClick={() => {
+                  setShowErrorDialog(false);
+                  setErrorMessage("");
+                }}
                 className="w-full sm:w-auto bg-primary hover:bg-primary-700 text-white"
               >
                 OK
