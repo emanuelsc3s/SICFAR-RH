@@ -14,16 +14,24 @@ Este documento define a estrutura de banco de dados necessária para armazenar o
 
 ### ✅ Novidades Implementadas
 
-1. **Soft Delete Completo**
-   - Campo `deletado` CHAR(1) com valores 'N' ou 'S'
-   - Campos `deleted_at`, `deleted_by`, `deleted_nome` para auditoria
-   - Trigger que previne DELETE físico automaticamente
-   - Procedure `soft_delete_voucher_by_id` para soft delete programático
+1. **Soft Delete Completo em Todas as Tabelas**
+   - Campo `deletado` CHAR(1) com valores 'N' ou 'S' em:
+     - `tbvoucher`
+     - `tbparceiro`
+     - `tbbeneficio`
+     - `tbusuario`
+   - Campos `deleted_at`, `deleted_by`, `deleted_nome` para auditoria completa
+   - Trigger que previne DELETE físico automaticamente (tbvoucher)
+   - Procedure `soft_delete_voucher_by_id` para soft delete programático (tbvoucher)
 
 2. **Sistema de Auditoria Robusto**
-   - Campos `created_nome`, `updated_nome`, `deleted_nome` para preservar histórico
-   - Referências a `tbusuario.usuario_id` (INTEGER) ao invés de `auth.users(id)` (UUID)
-   - Timezone configurado: `America/Sao_Paulo`
+   - Campos `created_nome`, `updated_nome`, `deleted_nome` para preservar histórico em todas as tabelas
+   - **Todas as FKs de auditoria referenciam `auth.users(id)` (UUID)**:
+     - `created_by`, `updated_by`, `deleted_by` em `tbvoucher`
+     - `created_by`, `updated_by`, `deleted_by` em `tbparceiro`
+     - `created_by`, `updated_by`, `deleted_by` em `tbbeneficio`
+     - `created_by`, `updated_by`, `deleted_by` em `tbusuario`
+   - Timezone configurado: `America/Sao_Paulo` (tbvoucher, tbparceiro) e `America/Fortaleza` (tbusuario)
 
 3. **Campos Renomeados/Removidos**
    - ✅ `funcionario_nome` → `funcionario` (TEXT)
@@ -38,11 +46,35 @@ Este documento define a estrutura de banco de dados necessária para armazenar o
 
 ### 📋 Impactos no Código
 
-- **INSERT**: Adicionar `deletado`, `created_by`, `created_nome`
-- **SELECT**: Filtrar `deletado = 'N'` em todas as queries
-- **DELETE**: Usar soft delete (UPDATE) ao invés de DELETE físico
+**Para todas as tabelas com soft delete (tbvoucher, tbparceiro, tbbeneficio):**
+
+- **INSERT**:
+  - Adicionar `deletado = 'N'`
+  - Adicionar `created_by` (UUID do auth.users)
+  - Adicionar `created_nome` (nome do usuário logado)
+  - Adicionar `created_at` (timestamp atual)
+
+- **SELECT**:
+  - Filtrar `deletado = 'N'` em todas as queries
+  - Usar `WHERE deletado = 'N'` ou `WHERE deletado != 'S'`
+
+- **UPDATE**:
+  - Sempre atualizar `updated_by` (UUID do auth.users)
+  - Sempre atualizar `updated_nome` (nome do usuário logado)
+  - Sempre atualizar `updated_at` (timestamp atual)
+
+- **DELETE**:
+  - Usar soft delete (UPDATE) ao invés de DELETE físico
+  - Setar `deletado = 'S'`
+  - Setar `deleted_by` (UUID do auth.users)
+  - Setar `deleted_nome` (nome do usuário logado)
+  - Setar `deleted_at` (timestamp atual)
+
+**Específico para tbvoucher:**
+
 - **Campos**: Usar novos nomes (`funcionario`, `email`, `matricula`)
 - **Benefícios**: Buscar `beneficio_titulo` de JOIN com `tbbeneficio`
+- **Auditoria**: Usar `auth.users(id)` (UUID) nas FKs de auditoria
 
 ---
 
@@ -107,23 +139,23 @@ CREATE TABLE tbvoucher (
     -- Identificação
     voucher_id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
 
+    -- Datas
+    data_emissao DATE NOT NULL,
+    data_validade DATE NOT NULL,
+    data_resgate TIMESTAMP WITHOUT TIME ZONE NULL,
+    hora_resgate TIME WITHOUT TIME ZONE NULL,
+
     -- Dados do Funcionário (desnormalizados para histórico)
     funcionario_id INTEGER NULL REFERENCES tbfuncionario(funcionario_id),
     funcionario TEXT NULL,
     email TEXT NULL,
     matricula TEXT NULL,
 
-    -- Benefício Associado (1:1)
-    beneficio_id INTEGER NULL REFERENCES tbbeneficio(beneficio_id),
-
     -- Valor
     valor NUMERIC(10,2) NOT NULL DEFAULT 0.00,
 
-    -- Datas
-    data_emissao DATE NOT NULL,
-    data_validade DATE NOT NULL,
-    data_resgate TIMESTAMP WITHOUT TIME ZONE NULL,
-    hora_resgate TIME WITHOUT TIME ZONE NULL,
+    -- Benefício Associado (1:1)
+    beneficio_id INTEGER NULL REFERENCES tbbeneficio(beneficio_id),
 
     -- Detalhes da Solicitação
     justificativa TEXT NULL,
@@ -132,21 +164,21 @@ CREATE TABLE tbvoucher (
     -- Status e Controle
     status public.voucher_status NULL,
 
-    -- Soft Delete
-    deletado CHAR(1) NOT NULL DEFAULT 'N' CHECK (deletado IN ('N', 'S')),
-
     -- Metadados de Auditoria
     created_at TIMESTAMP WITHOUT TIME ZONE NULL DEFAULT (now() AT TIME ZONE 'America/Sao_Paulo'::text),
-    created_by INTEGER NULL REFERENCES tbusuario(usuario_id),
     created_nome TEXT NOT NULL,
+    created_by UUID NULL REFERENCES auth.users(id),
 
     updated_at TIMESTAMP WITHOUT TIME ZONE NULL,
-    updated_by INTEGER NULL REFERENCES tbusuario(usuario_id),
     updated_nome TEXT NULL,
+    updated_by UUID NULL REFERENCES auth.users(id),
 
     deleted_at TIMESTAMP WITHOUT TIME ZONE NULL,
-    deleted_by INTEGER NULL REFERENCES tbusuario(usuario_id),
-    deleted_nome TEXT NULL
+    deleted_nome TEXT NULL,
+    deleted_by UUID NULL REFERENCES auth.users(id),
+
+    -- Soft Delete
+    deletado CHAR(1) NOT NULL DEFAULT 'N' CHECK (deletado IN ('N', 'S'))
 );
 
 -- Comentários da tabela
@@ -167,54 +199,68 @@ COMMENT ON COLUMN tbvoucher.urgente IS 'Indica se a solicitação é urgente (tr
 COMMENT ON COLUMN tbvoucher.status IS 'Status atual do voucher no ciclo de vida (ENUM: pendente, emitido, aprovado, resgatado, expirado, cancelado)';
 COMMENT ON COLUMN tbvoucher.deletado IS 'Indica se o voucher foi deletado logicamente (S=Sim, N=Não) - Soft Delete';
 COMMENT ON COLUMN tbvoucher.created_at IS 'Data e hora de criação do registro (timezone: America/Sao_Paulo)';
-COMMENT ON COLUMN tbvoucher.created_by IS 'ID do usuário que criou o registro (FK para tbusuario)';
 COMMENT ON COLUMN tbvoucher.created_nome IS 'Nome do usuário que criou o registro';
+COMMENT ON COLUMN tbvoucher.created_by IS 'UUID do usuário que criou o registro (FK para auth.users)';
 COMMENT ON COLUMN tbvoucher.updated_at IS 'Data e hora da última atualização do registro';
-COMMENT ON COLUMN tbvoucher.updated_by IS 'ID do usuário que atualizou o registro (FK para tbusuario)';
 COMMENT ON COLUMN tbvoucher.updated_nome IS 'Nome do usuário que atualizou o registro';
+COMMENT ON COLUMN tbvoucher.updated_by IS 'UUID do usuário que atualizou o registro (FK para auth.users)';
 COMMENT ON COLUMN tbvoucher.deleted_at IS 'Data e hora em que o registro foi deletado (soft delete)';
-COMMENT ON COLUMN tbvoucher.deleted_by IS 'ID do usuário que deletou o registro (FK para tbusuario)';
 COMMENT ON COLUMN tbvoucher.deleted_nome IS 'Nome do usuário que deletou o registro';
+COMMENT ON COLUMN tbvoucher.deleted_by IS 'UUID do usuário que deletou o registro (FK para auth.users)';
 ```
 
 ### 2. Tabela: `tbparceiro` (Cadastro de Parceiros/Fornecedores)
 
 > **💡 Decisão de Design:**
-> - **Chave primária INTEGER**: Usa `INT4` com `GENERATED ALWAYS AS IDENTITY` para compatibilidade e performance
+> - **Chave primária INTEGER**: Usa `INT4` com `GENERATED BY DEFAULT AS IDENTITY` para compatibilidade e performance
 > - **Campos TEXT**: Maioria dos campos usa TEXT ao invés de VARCHAR para maior flexibilidade
 > - **Campos com tamanho sugerido**: `uf` (VARCHAR 2) e `cep` (VARCHAR 9) mantêm VARCHAR como sugestão de tamanho, mas sem validação obrigatória
 > - **Sem constraints de validação**: Todos os campos de dados (CPF/CNPJ, UF, CEP, etc.) não têm validação no banco
 > - **Responsabilidade de validação**: Validação de formato e conteúdo deve ser feita no frontend/backend da aplicação
 > - **Contatos múltiplos**: Campos separados para telefone e WhatsApp
 > - **Endereço completo**: Estrutura detalhada para localização do parceiro
+> - **Soft Delete Completo**: Campos `deletado`, `deleted_at`, `deleted_by`, `deleted_nome`
+> - **Sistema de Auditoria**: Campos `created_nome`, `updated_nome`, `deleted_nome` para preservar histórico
 
 ```sql
 CREATE TABLE tbparceiro (
-    parceiro_id INT4 GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    parceiro_id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
     nome_fantasia TEXT NOT NULL,
-    razao_social TEXT,
+    razao_social TEXT NULL,
     cpf_cnpj TEXT NOT NULL,
-    email TEXT,
-    telefone TEXT,
-    whatsapp TEXT,
-    endereco TEXT,
-    bairro TEXT,
-    cidade TEXT,
-    uf VARCHAR(2),
-    cep VARCHAR(9),
-    complemento TEXT,
-    observacao TEXT,
+    email TEXT NULL,
+    telefone TEXT NULL,
+    whatsapp TEXT NULL,
+    endereco TEXT NULL,
+    bairro TEXT NULL,
+    cidade TEXT NULL,
+    uf VARCHAR(2) NULL,
+    cep VARCHAR(9) NULL,
+    complemento TEXT NULL,
+    observacao TEXT NULL,
     ativo BOOLEAN NOT NULL DEFAULT true,
 
-    -- Metadados
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_by UUID REFERENCES auth.users(id),
-    updated_by UUID REFERENCES auth.users(id)
+    -- Metadados de Auditoria
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'America/Sao_Paulo'::text),
+    created_by UUID NULL REFERENCES auth.users(id),
+    created_nome TEXT NULL,
+
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    updated_by UUID NULL REFERENCES auth.users(id),
+    updated_nome TEXT NULL,
+
+    deleted_at TIMESTAMP WITHOUT TIME ZONE NULL,
+    deleted_by UUID NULL REFERENCES auth.users(id),
+    deleted_nome TEXT NULL,
+
+    -- Soft Delete
+    deletado CHAR(1) NOT NULL DEFAULT 'N' CHECK (deletado IN ('N', 'S')),
+
+    UNIQUE (parceiro_id)
 );
 
 COMMENT ON TABLE tbparceiro IS 'Cadastro de parceiros/fornecedores de benefícios';
-COMMENT ON COLUMN tbparceiro.parceiro_id IS 'ID sequencial do parceiro (INT4 IDENTITY)';
+COMMENT ON COLUMN tbparceiro.parceiro_id IS 'ID sequencial do parceiro (INTEGER IDENTITY)';
 COMMENT ON COLUMN tbparceiro.nome_fantasia IS 'Nome comercial/fantasia do parceiro';
 COMMENT ON COLUMN tbparceiro.razao_social IS 'Razão social (nome jurídico)';
 COMMENT ON COLUMN tbparceiro.cpf_cnpj IS 'CPF ou CNPJ do parceiro (aceita qualquer formato: com ou sem pontuação)';
@@ -229,6 +275,16 @@ COMMENT ON COLUMN tbparceiro.cep IS 'CEP formatado (XXXXX-XXX)';
 COMMENT ON COLUMN tbparceiro.complemento IS 'Complemento do endereço';
 COMMENT ON COLUMN tbparceiro.observacao IS 'Observações gerais sobre o parceiro';
 COMMENT ON COLUMN tbparceiro.ativo IS 'Indica se o parceiro está ativo';
+COMMENT ON COLUMN tbparceiro.deletado IS 'Indica se o parceiro foi deletado logicamente (S=Sim, N=Não) - Soft Delete';
+COMMENT ON COLUMN tbparceiro.created_at IS 'Data e hora de criação do registro (timezone: America/Sao_Paulo)';
+COMMENT ON COLUMN tbparceiro.created_by IS 'UUID do usuário que criou o registro (FK para auth.users)';
+COMMENT ON COLUMN tbparceiro.created_nome IS 'Nome do usuário que criou o registro';
+COMMENT ON COLUMN tbparceiro.updated_at IS 'Data e hora da última atualização do registro';
+COMMENT ON COLUMN tbparceiro.updated_by IS 'UUID do usuário que atualizou o registro (FK para auth.users)';
+COMMENT ON COLUMN tbparceiro.updated_nome IS 'Nome do usuário que atualizou o registro';
+COMMENT ON COLUMN tbparceiro.deleted_at IS 'Data e hora em que o registro foi deletado (soft delete)';
+COMMENT ON COLUMN tbparceiro.deleted_by IS 'UUID do usuário que deletou o registro (FK para auth.users)';
+COMMENT ON COLUMN tbparceiro.deleted_nome IS 'Nome do usuário que deletou o registro';
 ```
 
 #### ⚠️ Impactos da Ausência de Constraints
@@ -272,43 +328,71 @@ COMMENT ON COLUMN tbparceiro.ativo IS 'Indica se o parceiro está ativo';
 ### 3. Tabela: `tbbeneficio` (Catálogo de Benefícios)
 
 > **💡 Decisão de Design:**
-> - **Chave primária INTEGER**: Usa `INT4` com `GENERATED ALWAYS AS IDENTITY` para compatibilidade e performance
+> - **Chave primária INTEGER**: Usa `INTEGER` com `GENERATED BY DEFAULT AS IDENTITY` para compatibilidade e performance
 > - **Campo `beneficio`**: Renomeado de `titulo` para `beneficio` (TEXT ao invés de VARCHAR)
 > - **Campo `valor_limite`**: Adicionado para controle de valor máximo permitido por benefício
 > - **Campo `parceiro_id`**: Relacionamento com `tbparceiro` (opcional - permite benefícios sem parceiro específico)
 > - **Sem código único**: Campo `codigo` removido (usar `beneficio_id` ou `beneficio` para identificação)
+> - **Soft Delete Completo**: Campos `deletado`, `deleted_at`, `deleted_by`, `deleted_nome`
+> - **Sistema de Auditoria**: Campos `created_nome`, `updated_nome`, `deleted_nome` para preservar histórico
 
 ```sql
 CREATE TABLE tbbeneficio (
-    beneficio_id INT4 GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    parceiro_id INT4 REFERENCES tbparceiro(parceiro_id) ON DELETE RESTRICT,
-    beneficio TEXT,
-    descricao TEXT,
-    valor NUMERIC(10,2),
-    valor_limite NUMERIC(10,2),
-    icone VARCHAR(50),
+    beneficio_id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    beneficio TEXT NULL,
+    descricao TEXT NULL,
+    valor NUMERIC(10,2) NULL,
+    valor_limite NUMERIC(10,2) NULL,
+    icone VARCHAR(50) NULL,
     ativo BOOLEAN NOT NULL DEFAULT true,
 
-    -- Metadados
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    -- Metadados de Auditoria
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by UUID NULL REFERENCES auth.users(id),
+    created_nome TEXT NULL,
+
+    updated_at TIMESTAMP WITHOUT TIME ZONE NULL,
+    updated_by UUID NULL REFERENCES auth.users(id),
+    updated_nome TEXT NULL,
+
+    deleted_at TIMESTAMP WITHOUT TIME ZONE NULL,
+    deleted_by UUID NULL REFERENCES auth.users(id),
+    deleted_nome TEXT NULL,
+
+    -- Soft Delete
+    deletado CHAR(1) NOT NULL DEFAULT 'N' CHECK (deletado IN ('N', 'S')),
+
+    -- Relacionamento com Parceiro
+    parceiro_id INTEGER NULL REFERENCES tbparceiro(parceiro_id),
+
+    UNIQUE (beneficio_id)
 );
 
 COMMENT ON TABLE tbbeneficio IS 'Catálogo de benefícios disponíveis para solicitação';
-COMMENT ON COLUMN tbbeneficio.beneficio_id IS 'ID sequencial do benefício (INT4 IDENTITY)';
-COMMENT ON COLUMN tbbeneficio.parceiro_id IS 'Parceiro/fornecedor associado ao benefício (opcional)';
+COMMENT ON COLUMN tbbeneficio.beneficio_id IS 'ID sequencial do benefício (INTEGER IDENTITY)';
 COMMENT ON COLUMN tbbeneficio.beneficio IS 'Nome/título do benefício';
 COMMENT ON COLUMN tbbeneficio.descricao IS 'Descrição detalhada do benefício';
 COMMENT ON COLUMN tbbeneficio.valor IS 'Valor padrão do benefício';
 COMMENT ON COLUMN tbbeneficio.valor_limite IS 'Valor máximo permitido para solicitação deste benefício';
 COMMENT ON COLUMN tbbeneficio.icone IS 'Nome do ícone para exibição na interface';
 COMMENT ON COLUMN tbbeneficio.ativo IS 'Indica se o benefício está disponível para solicitação';
+COMMENT ON COLUMN tbbeneficio.parceiro_id IS 'Parceiro/fornecedor associado ao benefício (opcional)';
+COMMENT ON COLUMN tbbeneficio.deletado IS 'Indica se o benefício foi deletado logicamente (S=Sim, N=Não) - Soft Delete';
+COMMENT ON COLUMN tbbeneficio.created_at IS 'Data e hora de criação do registro';
+COMMENT ON COLUMN tbbeneficio.created_by IS 'UUID do usuário que criou o registro (FK para auth.users)';
+COMMENT ON COLUMN tbbeneficio.created_nome IS 'Nome do usuário que criou o registro';
+COMMENT ON COLUMN tbbeneficio.updated_at IS 'Data e hora da última atualização do registro';
+COMMENT ON COLUMN tbbeneficio.updated_by IS 'UUID do usuário que atualizou o registro (FK para auth.users)';
+COMMENT ON COLUMN tbbeneficio.updated_nome IS 'Nome do usuário que atualizou o registro';
+COMMENT ON COLUMN tbbeneficio.deleted_at IS 'Data e hora em que o registro foi deletado (soft delete)';
+COMMENT ON COLUMN tbbeneficio.deleted_by IS 'UUID do usuário que deletou o registro (FK para auth.users)';
+COMMENT ON COLUMN tbbeneficio.deleted_nome IS 'Nome do usuário que deletou o registro';
 ```
 
 ### 4. Tabela: `tbusuario` (Referência - Já Existente)
 
 > **⚠️ IMPORTANTE:** Esta tabela **já existe** no banco de dados.
-> A tabela `tbvoucher` faz referência a ela através dos campos `created_by`, `updated_by` e `deleted_by` (INTEGER).
+> A tabela `tbvoucher` faz referência a `auth.users(id)` através dos campos `created_by`, `updated_by` e `deleted_by` (UUID).
 
 ```sql
 -- TABELA JÁ EXISTENTE - NÃO CRIAR NOVAMENTE
@@ -316,23 +400,27 @@ COMMENT ON COLUMN tbbeneficio.ativo IS 'Indica se o benefício está disponível
 
 CREATE TABLE tbusuario (
     usuario_id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() AT TIME ZONE 'America/Fortaleza'::text),
-    usuario TEXT NULL,  -- Email do usuário (usado para login e exibição)
-    user_id UUID NULL REFERENCES auth.users(id),  -- Vínculo com Supabase Auth
+    usuario TEXT NULL,
+    user_id UUID NULL REFERENCES auth.users(id),
     perfil_id INTEGER NULL,
-    deletado TEXT NULL DEFAULT 'N',  -- Soft delete: 'N' ou 'S'
+    deletado TEXT NULL DEFAULT 'N',
     funcionario_id INTEGER NULL REFERENCES tbfuncionario(funcionario_id),
     parceiro_id INTEGER NULL REFERENCES tbparceiro(parceiro_id),
-    created_by INTEGER NULL REFERENCES tbusuario(usuario_id),
+
+    -- Metadados de Auditoria
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'America/Fortaleza'::text),
+    created_by UUID NULL REFERENCES auth.users(id),
+    created_nome TEXT NULL,
+
     updated_at TIMESTAMP WITHOUT TIME ZONE NULL,
-    updated_by INTEGER NULL REFERENCES tbusuario(usuario_id),
+    updated_by UUID NULL REFERENCES auth.users(id),
     updated_nome TEXT NULL,
+
     deleted_at TIMESTAMP WITHOUT TIME ZONE NULL,
-    deleted_by INTEGER NULL REFERENCES tbusuario(usuario_id),
+    deleted_by UUID NULL REFERENCES auth.users(id),
     deleted_nome TEXT NULL,
 
-    CONSTRAINT tbusuario_pkey PRIMARY KEY (usuario_id),
-    CONSTRAINT tbusuario_usuario_id_key UNIQUE (usuario_id)
+    UNIQUE (usuario_id)
 );
 
 COMMENT ON TABLE tbusuario IS 'Cadastro de usuários do sistema (TABELA JÁ EXISTENTE)';
@@ -341,7 +429,17 @@ COMMENT ON COLUMN tbusuario.usuario IS 'Email do usuário - usado para login e e
 COMMENT ON COLUMN tbusuario.user_id IS 'UUID do usuário no Supabase Auth (auth.users.id)';
 COMMENT ON COLUMN tbusuario.perfil_id IS 'ID do perfil/role do usuário';
 COMMENT ON COLUMN tbusuario.funcionario_id IS 'Vínculo com tbfuncionario para obter matrícula e cargo';
+COMMENT ON COLUMN tbusuario.parceiro_id IS 'Vínculo com tbparceiro para usuários parceiros';
 COMMENT ON COLUMN tbusuario.deletado IS 'Soft delete: N (ativo) ou S (deletado)';
+COMMENT ON COLUMN tbusuario.created_at IS 'Data e hora de criação do registro (timezone: America/Fortaleza)';
+COMMENT ON COLUMN tbusuario.created_by IS 'UUID do usuário que criou o registro (FK para auth.users)';
+COMMENT ON COLUMN tbusuario.created_nome IS 'Nome do usuário que criou o registro';
+COMMENT ON COLUMN tbusuario.updated_at IS 'Data e hora da última atualização do registro';
+COMMENT ON COLUMN tbusuario.updated_by IS 'UUID do usuário que atualizou o registro (FK para auth.users)';
+COMMENT ON COLUMN tbusuario.updated_nome IS 'Nome do usuário que atualizou o registro';
+COMMENT ON COLUMN tbusuario.deleted_at IS 'Data e hora em que o registro foi deletado (soft delete)';
+COMMENT ON COLUMN tbusuario.deleted_by IS 'UUID do usuário que deletou o registro (FK para auth.users)';
+COMMENT ON COLUMN tbusuario.deleted_nome IS 'Nome do usuário que deletou o registro';
 ```
 
 ### 5. Tabela: `tbfuncionario` (Referência - Já Existente)
@@ -449,7 +547,7 @@ COMMENT ON TABLE tbfuncionario IS 'Cadastro completo de funcionários da empresa
                                       │               │
                                       └───────────────┘
                                          parceiro_id
-                                         (INT4 PK)
+                                         (INTEGER PK)
                                               │
                                               │ 1:N
                                               v
@@ -458,19 +556,19 @@ COMMENT ON TABLE tbfuncionario IS 'Cadastro completo de funcionários da empresa
 │  (JÁ EXISTENTE)  │     │   (1 voucher =        │     │               │
 └──────────────────┘     │    1 benefício)       │     └───────────────┘
    funcionario_id        └───────────────────────┘        beneficio_id
-   (INTEGER PK)               funcionario_id               (INT4 PK)
+   (INTEGER PK)               funcionario_id               (INTEGER PK)
         │                     (INTEGER FK)                 parceiro_id
-        │                     beneficio_id                 (INT4 FK)
-        │                     (INT4 FK)                         │
+        │                     beneficio_id                 (INTEGER FK)
+        │                     (INTEGER FK)                      │
         │                     voucher_id                        │
         │                     (UUID PK)                         │
         │                     deletado (CHAR 1)                 │
         │                                                       │
    ┌────┴────┐                    │                            │
-   │tbusuario│                    │                            │
+   │auth.users│                   │                            │
    └─────────┘                    │                            │
-   usuario_id                     │                            │
-   (INTEGER PK)                   │                            │
+      id                          │                            │
+   (UUID PK)                      │                            │
         │                         │                            │
         └─────────────────────────┴────────────────────────────┘
               (created_by/updated_by/deleted_by)
@@ -481,11 +579,23 @@ COMMENT ON TABLE tbfuncionario IS 'Cadastro completo de funcionários da empresa
 | Tabela Origem | Campo FK           | Tabela Destino  | Campo PK          | Tipo    | Cardinalidade |
 |---------------|--------------------|-----------------|-------------------|---------|---------------|
 | `tbvoucher`   | `funcionario_id`   | `tbfuncionario` | `funcionario_id`  | INTEGER | N:1           |
-| `tbvoucher`   | `beneficio_id`     | `tbbeneficio`   | `beneficio_id`    | INT4    | N:1           |
-| `tbvoucher`   | `created_by`       | `tbusuario`     | `usuario_id`      | INTEGER | N:1           |
-| `tbvoucher`   | `updated_by`       | `tbusuario`     | `usuario_id`      | INTEGER | N:1           |
-| `tbvoucher`   | `deleted_by`       | `tbusuario`     | `usuario_id`      | INTEGER | N:1           |
-| `tbbeneficio` | `parceiro_id`      | `tbparceiro`    | `parceiro_id`     | INT4    | N:1           |
+| `tbvoucher`   | `beneficio_id`     | `tbbeneficio`   | `beneficio_id`    | INTEGER | N:1           |
+| `tbvoucher`   | `created_by`       | `auth.users`    | `id`              | UUID    | N:1           |
+| `tbvoucher`   | `updated_by`       | `auth.users`    | `id`              | UUID    | N:1           |
+| `tbvoucher`   | `deleted_by`       | `auth.users`    | `id`              | UUID    | N:1           |
+| `tbbeneficio` | `parceiro_id`      | `tbparceiro`    | `parceiro_id`     | INTEGER | N:1           |
+| `tbparceiro`  | `created_by`       | `auth.users`    | `id`              | UUID    | N:1           |
+| `tbparceiro`  | `updated_by`       | `auth.users`    | `id`              | UUID    | N:1           |
+| `tbparceiro`  | `deleted_by`       | `auth.users`    | `id`              | UUID    | N:1           |
+| `tbbeneficio` | `created_by`       | `auth.users`    | `id`              | UUID    | N:1           |
+| `tbbeneficio` | `updated_by`       | `auth.users`    | `id`              | UUID    | N:1           |
+| `tbbeneficio` | `deleted_by`       | `auth.users`    | `id`              | UUID    | N:1           |
+| `tbusuario`   | `user_id`          | `auth.users`    | `id`              | UUID    | 1:1           |
+| `tbusuario`   | `funcionario_id`   | `tbfuncionario` | `funcionario_id`  | INTEGER | 1:1           |
+| `tbusuario`   | `parceiro_id`      | `tbparceiro`    | `parceiro_id`     | INTEGER | 1:1           |
+| `tbusuario`   | `created_by`       | `auth.users`    | `id`              | UUID    | N:1           |
+| `tbusuario`   | `updated_by`       | `auth.users`    | `id`              | UUID    | N:1           |
+| `tbusuario`   | `deleted_by`       | `auth.users`    | `id`              | UUID    | N:1           |
 
 ### Exemplo de Dados
 
@@ -493,16 +603,16 @@ COMMENT ON TABLE tbfuncionario IS 'Cadastro completo de funcionários da empresa
 
 **Resultado:** São gerados 3 vouchers separados:
 
-| voucher_id (UUID) | funcionario_id | beneficio_id (INT4) | funcionario           | valor  | deletado |
-|-------------------|----------------|---------------------|-----------------------|--------|----------|
-| `550e8400-...`    | 123            | 1                   | João Silva            | 125.00 | N        |
-| `660e9511-...`    | 123            | 2                   | João Silva            | 300.00 | N        |
-| `770ea622-...`    | 123            | 6                   | João Silva            | 35.00  | N        |
+| voucher_id (UUID) | funcionario_id | beneficio_id (INTEGER) | funcionario           | valor  | deletado |
+|-------------------|----------------|------------------------|-----------------------|--------|----------|
+| `550e8400-...`    | 123            | 1                      | João Silva            | 125.00 | N        |
+| `660e9511-...`    | 123            | 2                      | João Silva            | 300.00 | N        |
+| `770ea622-...`    | 123            | 6                      | João Silva            | 35.00  | N        |
 
 ### Consulta de Benefícios com Parceiros
 
 ```sql
--- Consultar todos os benefícios ativos com informações do parceiro
+-- Consultar todos os benefícios ativos e não deletados com informações do parceiro
 SELECT
     b.beneficio_id,
     b.beneficio,
@@ -519,7 +629,9 @@ SELECT
     p.uf AS parceiro_uf
 FROM tbbeneficio b
 LEFT JOIN tbparceiro p ON b.parceiro_id = p.parceiro_id
+    AND p.deletado = 'N'  -- Filtrar parceiros não deletados
 WHERE b.ativo = true
+    AND b.deletado = 'N'  -- Filtrar benefícios não deletados
 ORDER BY b.beneficio;
 ```
 
@@ -572,12 +684,28 @@ CREATE INDEX idx_parceiro_email ON tbparceiro(email);
 CREATE INDEX idx_parceiro_ativo ON tbparceiro(ativo) WHERE ativo = true;
 CREATE INDEX idx_parceiro_cidade ON tbparceiro(cidade);
 CREATE INDEX idx_parceiro_uf ON tbparceiro(uf);
+CREATE INDEX idx_parceiro_deletado ON tbparceiro(deletado);
+CREATE INDEX idx_parceiro_created_by ON tbparceiro(created_by);
+CREATE INDEX idx_parceiro_updated_by ON tbparceiro(updated_by);
+CREATE INDEX idx_parceiro_deleted_by ON tbparceiro(deleted_by);
+
+-- Índice otimizado para parceiros ativos e não deletados
+CREATE INDEX idx_parceiro_ativos ON tbparceiro(ativo, deletado)
+    WHERE ativo = true AND deletado = 'N';
 
 -- Índices na tabela tbbeneficio
 CREATE INDEX idx_beneficio_parceiro_id ON tbbeneficio(parceiro_id);
 CREATE INDEX idx_beneficio_ativo ON tbbeneficio(ativo) WHERE ativo = true;
 CREATE INDEX idx_beneficio_nome ON tbbeneficio(beneficio);
 CREATE INDEX idx_beneficio_parceiro_ativo ON tbbeneficio(parceiro_id, ativo) WHERE ativo = true;
+CREATE INDEX idx_beneficio_deletado ON tbbeneficio(deletado);
+CREATE INDEX idx_beneficio_created_by ON tbbeneficio(created_by);
+CREATE INDEX idx_beneficio_updated_by ON tbbeneficio(updated_by);
+CREATE INDEX idx_beneficio_deleted_by ON tbbeneficio(deleted_by);
+
+-- Índice otimizado para benefícios ativos e não deletados
+CREATE INDEX idx_beneficio_ativos ON tbbeneficio(ativo, deletado)
+    WHERE ativo = true AND deletado = 'N';
 ```
 
 ---
