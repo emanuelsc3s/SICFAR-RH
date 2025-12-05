@@ -19,7 +19,6 @@ import { useNavigate } from "react-router-dom";
 import QRCode from "qrcode";
 import { toast } from "sonner";
 import { generateVoucherPDF } from "@/utils/pdfGenerator";
-import { salvarVoucherEmitido, type VoucherEmitido } from "@/utils/voucherStorage";
 import { supabase } from "@/lib/supabase";
 
 // Interface para os dados do colaborador
@@ -47,6 +46,35 @@ interface Beneficio {
   title: string;
   description: string;
   icon: LucideIcon;
+}
+
+// Interface para inserção no banco de dados (tbvoucher)
+interface VoucherDatabaseInsert {
+  // Datas
+  data_emissao: string;           // DATE: YYYY-MM-DD
+  data_validade: string;          // DATE: YYYY-MM-DD
+
+  // Dados do Funcionário
+  funcionario_id?: number | null;
+  funcionario: string;            // Snapshot
+  email: string;                  // Snapshot
+  matricula: string;              // Snapshot
+
+  // Benefício (1:1)
+  beneficio_id: number;
+
+  // Detalhes da Solicitação
+  justificativa?: string | null;
+  urgente: boolean;
+
+  // Status e valor
+  status: 'pendente' | 'emitido' | 'aprovado' | 'resgatado' | 'expirado' | 'cancelado';
+  valor: number;
+
+  // Auditoria
+  created_nome: string;
+  created_by: string;             // UUID
+  deletado: 'N' | 'S';
 }
 
 // Mapa de ícones Lucide React
@@ -90,7 +118,7 @@ const SolicitarBeneficio = () => {
   // Form data for step 2
   const [formData, setFormData] = useState({
     justificativa: "",
-    urgencia: "",
+    urgencia: "nao",  // Default to "Não" (not urgent)
     informacoesAdicionais: ""
   });
 
@@ -375,6 +403,68 @@ const SolicitarBeneficio = () => {
     setIsProcessing(true);
 
     // ===================================================================
+    // Obter usuário autenticado (para created_by)
+    // ===================================================================
+    console.log('🔐 Obtendo usuário autenticado...');
+
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !session?.user) {
+      console.error('❌ Erro ao obter sessão:', sessionError);
+      toast.error("Sessão expirada. Por favor, faça login novamente.");
+      setIsProcessing(false);
+      navigate('/login');
+      return;
+    }
+
+    const userId = session.user.id; // UUID para created_by
+    console.log('✅ Usuário autenticado:', userId);
+
+    // ===================================================================
+    // Buscar funcionario_id por matrícula (opcional, não quebra se falhar)
+    // ===================================================================
+    console.log('🔍 Buscando funcionario_id...');
+
+    let funcionarioId: number | null = null;
+
+    try {
+      const { data: funcionarioData, error: funcionarioError } = await supabase
+        .from('tbfuncionario')
+        .select('funcionario_id, cpf, nome, email, matricula')
+        .eq('email', colaborador.email)
+        .single();
+
+      if (funcionarioError) {
+        console.error('❌ Funcionário não encontrado na tbfuncionario:', funcionarioError);
+        toast.error('Erro de cadastro', {
+          description: 'Você não está cadastrado como funcionário. Contate o RH.',
+          duration: 8000
+        });
+        return;
+      }
+
+      if (!funcionarioData || !funcionarioData.funcionario_id) {
+        console.error('❌ Dados do funcionário incompletos');
+        toast.error('Erro de cadastro', {
+          description: 'Cadastro incompleto. Contate o RH.',
+          duration: 8000
+        });
+        return;
+      }
+
+      funcionarioId = funcionarioData.funcionario_id;
+      console.log('✅ funcionario_id encontrado:', funcionarioId);
+      console.log('✅ CPF recuperado do banco:', funcionarioData.cpf);
+    } catch (error) {
+      console.error('❌ Erro ao buscar funcionário:', error);
+      toast.error('Erro ao buscar dados do funcionário', {
+        description: 'Não foi possível verificar seu cadastro.',
+        duration: 5000
+      });
+      return;
+    }
+
+    // ===================================================================
     // INÍCIO DO PROCESSAMENTO DE VOUCHERS INDIVIDUAIS
     // ===================================================================
 
@@ -390,9 +480,56 @@ const SolicitarBeneficio = () => {
       let vouchersComSucesso = 0;
       let vouchersComErroEmail = 0;
       let vouchersComErroGeral = 0;
+      let vouchersComErroBanco = 0;
 
       const now = new Date();
       const dataValidade = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 dias de validade
+
+      // Adicionar formatação para o banco (DATE)
+      const dataEmissao = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const dataValidadeFormatted = dataValidade.toISOString().split('T')[0]; // YYYY-MM-DD
+
+      // Converter urgencia string → boolean
+      const isUrgent = formData.urgencia === 'sim';
+
+      console.log('📅 Datas calculadas:', { dataEmissao, dataValidadeFormatted });
+      console.log('⏰ Urgência:', formData.urgencia, '→', isUrgent);
+
+      // ===================================================================
+      // BUSCAR VALORES DOS BENEFÍCIOS
+      // ===================================================================
+      console.log('💰 Buscando valores dos benefícios selecionados...');
+
+      const beneficioIds = selectedBeneficios.map(id => parseInt(id, 10));
+      const { data: beneficiosData, error: beneficiosError } = await supabase
+        .from('tbbeneficio')
+        .select('beneficio_id, valor')
+        .in('beneficio_id', beneficioIds);
+
+      if (beneficiosError) {
+        console.error('❌ Erro ao buscar valores dos benefícios:', beneficiosError);
+        toast.error('Erro ao buscar dados dos benefícios', {
+          description: 'Não foi possível carregar os valores. Tente novamente.',
+          duration: 5000
+        });
+        return;
+      }
+
+      if (!beneficiosData || beneficiosData.length !== selectedBeneficios.length) {
+        console.error('❌ Alguns benefícios não foram encontrados no banco');
+        toast.error('Erro ao validar benefícios', {
+          description: 'Alguns benefícios selecionados não estão disponíveis.',
+          duration: 5000
+        });
+        return;
+      }
+
+      // Criar mapa para acesso rápido aos valores
+      const beneficioValorMap = new Map(
+        beneficiosData.map(b => [b.beneficio_id, b.valor || 0])
+      );
+
+      console.log('✅ Valores dos benefícios carregados:', Object.fromEntries(beneficioValorMap));
 
       // ===================================================================
       // LOOP: Processa CADA benefício individualmente
@@ -424,7 +561,7 @@ const SolicitarBeneficio = () => {
           console.log(`  📱 QR Code gerado para: ${beneficio.title}`);
 
           // -----------------------------------------------------------------
-          // Passo 3: Preparar dados do voucher individual para localStorage
+          // Passo 3: Preparar benefício formatado para PDF
           // -----------------------------------------------------------------
           const beneficioFormatado = {
             id: beneficio.id,
@@ -433,26 +570,76 @@ const SolicitarBeneficio = () => {
             icon: beneficio.icon
           };
 
-          const voucherDataToSave: VoucherEmitido = {
-            id: voucherNumber,
-            funcionario: colaborador.nome,
-            cpf: colaborador.cpf,
-            valor: 0, // Valor será definido posteriormente ou consultado do banco
-            dataResgate: "", // Voucher ainda não foi resgatado
-            horaResgate: "", // Voucher ainda não foi resgatado
-            beneficios: [beneficio.title], // Apenas UM benefício por voucher
-            parceiro: beneficio.title, // Nome do benefício como parceiro
-            status: 'emitido',
-            dataValidade: dataValidade.toLocaleDateString('pt-BR')
-          };
+          // -----------------------------------------------------------------
+          // Passo 4: Inserir voucher no banco de dados Supabase
+          // -----------------------------------------------------------------
+          console.log(`  💾 Inserindo voucher no banco de dados...`);
 
-          // -----------------------------------------------------------------
-          // Passo 5: Salvar voucher individual no localStorage
-          // -----------------------------------------------------------------
-          const salvouComSucesso = saveVoucherToLocalStorage(voucherDataToSave);
-          console.log(salvouComSucesso
-            ? `  💾 Voucher salvo no localStorage`
-            : `  ❌ Erro ao salvar voucher no localStorage`);
+          try {
+            // Validar beneficio_id antes de inserir
+            const beneficioIdNumber = parseInt(beneficio.id, 10);
+
+            if (isNaN(beneficioIdNumber)) {
+              console.error(`  ❌ beneficio_id inválido:`, beneficio.id);
+              vouchersComErroBanco++;
+            } else {
+              // Obter valor do benefício do mapa
+              const valorBeneficio = beneficioValorMap.get(beneficioIdNumber) || 0;
+              console.log(`  💰 Valor do benefício: R$ ${valorBeneficio}`);
+
+              // Preparar objeto para inserção
+              const voucherToInsert: VoucherDatabaseInsert = {
+                // Datas
+                data_emissao: dataEmissao,
+                data_validade: dataValidadeFormatted,
+
+                // Funcionário (snapshot + FK opcional)
+                funcionario_id: funcionarioId,
+                funcionario: colaborador.nome,
+                email: colaborador.email,
+                matricula: colaborador.matricula,
+
+                // Benefício (1:1)
+                beneficio_id: beneficioIdNumber,
+
+                // Detalhes da solicitação
+                justificativa: formData.justificativa || null,
+                urgente: isUrgent,
+
+                // Status e valor
+                status: 'emitido',
+                valor: valorBeneficio,
+
+                // Auditoria
+                created_nome: colaborador.nome,
+                created_by: userId,
+                deletado: 'N'
+              };
+
+              // Inserir no banco
+              const { data: voucherInserido, error: insertError } = await supabase
+                .from('tbvoucher')
+                .insert([voucherToInsert])
+                .select('voucher_id')
+                .single();
+
+              if (insertError) {
+                console.error(`  ❌ Erro ao inserir voucher no banco:`, insertError);
+                vouchersComErroBanco++;
+
+                toast.warning('Voucher gerado, mas não foi salvo no banco de dados', {
+                  description: `Voucher ${voucherNumber} disponível localmente.`,
+                  duration: 5000
+                });
+              } else {
+                console.log(`  ✅ Voucher inserido no banco - UUID:`, voucherInserido.voucher_id);
+              }
+            }
+
+          } catch (dbError) {
+            console.error(`  ❌ Erro inesperado ao inserir no banco:`, dbError);
+            vouchersComErroBanco++;
+          }
 
           // -----------------------------------------------------------------
           // Passo 6: Gerar PDF do voucher individual (apenas 1 benefício)
@@ -531,6 +718,7 @@ const SolicitarBeneficio = () => {
       console.log(`  ✅ Vouchers com sucesso total: ${vouchersComSucesso}`);
       console.log(`  ⚠️ Vouchers com erro de e-mail: ${vouchersComErroEmail}`);
       console.log(`  ❌ Vouchers com erro geral: ${vouchersComErroGeral}`);
+      console.log(`  🗄️ Vouchers com erro de banco: ${vouchersComErroBanco}`);
       console.log(`  📦 Total de vouchers gerados: ${vouchersProcessados.length}`);
 
       // Atualiza o estado com os vouchers gerados
@@ -831,7 +1019,9 @@ const SolicitarBeneficio = () => {
                 {formData.urgencia && (
                   <div>
                     <p className="text-gray-600 mb-1">Urgência:</p>
-                    <p className="text-gray-900 font-medium">{formData.urgencia}</p>
+                    <p className="text-gray-900 font-medium">
+                      {formData.urgencia === 'sim' ? 'Sim' : formData.urgencia === 'nao' ? 'Não' : 'Não informado'}
+                    </p>
                   </div>
                 )}
                 <div>
@@ -1059,10 +1249,8 @@ const SolicitarBeneficio = () => {
                       <SelectValue placeholder="Normal" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-                      <SelectItem value="baixa">Baixa</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="alta">Alta</SelectItem>
-                      <SelectItem value="urgente">Urgente</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                      <SelectItem value="sim">Sim</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1177,7 +1365,7 @@ const SolicitarBeneficio = () => {
                     <div>
                       <p className="text-sm font-medium text-gray-700 mb-2">Urgência:</p>
                       <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                        {formData.urgencia || "Normal"}
+                        {formData.urgencia === 'sim' ? 'Sim' : formData.urgencia === 'nao' ? 'Não' : 'Não informado'}
                       </p>
                     </div>
                   </div>
