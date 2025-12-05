@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Home, Plus, Users, QrCode, Download, DollarSign, Eye, ArrowLeft, ArrowRight, Flame, Pill, Car, Heart, Bus, Fuel, LogOut, Settings, User as UserIcon, ChevronDown } from "lucide-react";
+import { Home, Plus, Users, QrCode, Download, DollarSign, Eye, ArrowLeft, ArrowRight, Flame, Pill, Car, Heart, Bus, Fuel, LogOut, Settings, User as UserIcon, ChevronDown, LucideIcon, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +32,39 @@ interface ColaboradorData {
   loginTimestamp: string;
 }
 
+// Interface para benefício vindo do banco de dados
+interface BeneficioFromDB {
+  beneficio_id: number;
+  beneficio: string;        // Nome do benefício
+  descricao: string;
+  icone: string;            // Nome do ícone em kebab-case
+  parceiro_id: number | null;
+}
+
+// Interface para benefício usado no componente
+interface Beneficio {
+  id: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+}
+
+// Mapa de ícones Lucide React
+const iconMap: Record<string, LucideIcon> = {
+  'flame': Flame,
+  'pill': Pill,
+  'fuel': Fuel,
+  'heart': Heart,
+  'bus': Bus,
+  'car': Car,
+};
+
+// Função para obter o componente de ícone
+const getIconComponent = (iconName: string | null): LucideIcon => {
+  if (!iconName) return Pill; // Ícone padrão
+  return iconMap[iconName.toLowerCase()] || Pill; // Ícone padrão caso não encontre
+};
+
 const SolicitarBeneficio = () => {
   const navigate = useNavigate();
   const [activeButton, setActiveButton] = useState("Solicitar Voucher");
@@ -42,10 +75,15 @@ const SolicitarBeneficio = () => {
   const [colaborador, setColaborador] = useState<ColaboradorData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentVoucherNumber, setCurrentVoucherNumber] = useState<string>("");
+
+  // Estados para benefícios dinâmicos
+  const [beneficios, setBeneficios] = useState<Beneficio[]>([]);
+  const [isLoadingBeneficios, setIsLoadingBeneficios] = useState(true);
+
   // Estado para armazenar múltiplos vouchers gerados (um para cada benefício)
   const [vouchersGerados, setVouchersGerados] = useState<Array<{
     voucherNumber: string;
-    beneficio: typeof beneficios[0];
+    beneficio: Beneficio;
     qrCodeUrl: string;
   }>>([]);
 
@@ -117,6 +155,66 @@ const SolicitarBeneficio = () => {
     }
   }, [navigate]);
 
+  // Carregar benefícios do Supabase
+  useEffect(() => {
+    const carregarBeneficios = async () => {
+      try {
+        setIsLoadingBeneficios(true);
+        console.log('🔄 Carregando benefícios do Supabase...');
+
+        const { data, error } = await supabase
+          .from('tbbeneficio')
+          .select('beneficio_id, beneficio, descricao, icone, parceiro_id')
+          .eq('ativo', true)
+          .eq('deletado', 'N')
+          .order('beneficio_id', { ascending: true });
+
+        if (error) {
+          console.error('❌ Erro ao carregar benefícios:', error);
+          toast.error('Erro ao carregar benefícios', {
+            description: 'Não foi possível carregar a lista de benefícios. Tente novamente.',
+            duration: 5000
+          });
+          setBeneficios([]);
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          console.warn('⚠️ Nenhum benefício ativo encontrado');
+          toast.warning('Nenhum benefício disponível', {
+            description: 'Não há benefícios ativos no momento.',
+            duration: 5000
+          });
+          setBeneficios([]);
+          return;
+        }
+
+        // Transformar dados do banco para o formato usado no componente
+        const beneficiosTransformados: Beneficio[] = data.map((item: BeneficioFromDB) => ({
+          id: item.beneficio_id.toString(),
+          title: item.beneficio,
+          description: item.descricao || 'Sem descrição',
+          icon: getIconComponent(item.icone)
+        }));
+
+        console.log(`✅ ${beneficiosTransformados.length} benefício(s) carregado(s) com sucesso`);
+        setBeneficios(beneficiosTransformados);
+
+      } catch (error) {
+        console.error('❌ Erro inesperado ao carregar benefícios:', error);
+        toast.error('Erro inesperado', {
+          description: 'Ocorreu um erro ao carregar os benefícios.',
+          duration: 5000
+        });
+        setBeneficios([]);
+      } finally {
+        setIsLoadingBeneficios(false);
+      }
+    };
+
+    carregarBeneficios();
+  }, []);
+
   const navigationButtons = [
     { name: "Início", icon: Home },
     { name: "Solicitar Voucher", icon: Plus },
@@ -125,51 +223,6 @@ const SolicitarBeneficio = () => {
     { name: "Resgates", icon: Download },
     { name: "Faturas", icon: DollarSign },
     { name: "Auditoria", icon: Eye }
-  ];
-
-  const beneficios = [
-    {
-      id: "vale-gas",
-      title: "Vale Gás",
-      description: "Benefício para compra de gás de cozinha",
-      value: "R$ 125,00",
-      icon: Flame
-    },
-    {
-      id: "vale-farmacia-santa-cecilia",
-      title: "Vale Farmácia Santa Cecília",
-      description: "Benefício para compras na Farmácia Santa Cecília",
-      value: "Máx R$ 300,00",
-      icon: Pill
-    },
-    {
-      id: "vale-farmacia-gentil",
-      title: "Vale Farmácia Gentil",
-      description: "Benefício para compras na Farmácia Gentil",
-      value: "Máx R$ 300,00",
-      icon: Pill
-    },
-    {
-      id: "vale-combustivel",
-      title: "Vale Combustível",
-      description: "Benefício para abastecimento de veículos",
-      value: "Consultar valor",
-      icon: Fuel
-    },
-    {
-      id: "plano-saude",
-      title: "Plano de Saúde",
-      description: "Cobertura de assistência médica e hospitalar",
-      value: "R$ 79,00",
-      icon: Heart
-    },
-    {
-      id: "vale-transporte",
-      title: "Vale Transporte",
-      description: "Auxílio para deslocamento urbano",
-      value: "R$ 35,00",
-      icon: Bus
-    }
   ];
 
   const steps = [
@@ -329,7 +382,7 @@ const SolicitarBeneficio = () => {
       // Array para armazenar os vouchers gerados durante o processamento
       const vouchersProcessados: Array<{
         voucherNumber: string;
-        beneficio: typeof beneficios[0];
+        beneficio: Beneficio;
         qrCodeUrl: string;
       }> = [];
 
@@ -371,22 +424,12 @@ const SolicitarBeneficio = () => {
           console.log(`  📱 QR Code gerado para: ${beneficio.title}`);
 
           // -----------------------------------------------------------------
-          // Passo 3: Calcular o valor individual do benefício
-          // -----------------------------------------------------------------
-          const valorMatch = beneficio.value.match(/[\d.,]+/);
-          const valorBeneficio = valorMatch
-            ? parseFloat(valorMatch[0].replace(',', '.'))
-            : 0;
-          console.log(`  💰 Valor do benefício: R$ ${valorBeneficio.toFixed(2)}`);
-
-          // -----------------------------------------------------------------
-          // Passo 4: Preparar dados do voucher individual para localStorage
+          // Passo 3: Preparar dados do voucher individual para localStorage
           // -----------------------------------------------------------------
           const beneficioFormatado = {
             id: beneficio.id,
             title: beneficio.title,
             description: beneficio.description,
-            value: beneficio.value,
             icon: beneficio.icon
           };
 
@@ -394,7 +437,7 @@ const SolicitarBeneficio = () => {
             id: voucherNumber,
             funcionario: colaborador.nome,
             cpf: colaborador.cpf,
-            valor: valorBeneficio,
+            valor: 0, // Valor será definido posteriormente ou consultado do banco
             dataResgate: "", // Voucher ainda não foi resgatado
             horaResgate: "", // Voucher ainda não foi resgatado
             beneficios: [beneficio.title], // Apenas UM benefício por voucher
@@ -739,16 +782,12 @@ const SolicitarBeneficio = () => {
 
                           <div className="grid grid-cols-2 gap-3 text-sm">
                             <div>
-                              <span className="text-gray-600">Valor:</span>
-                              <span className="font-semibold text-blue-600 ml-2">{voucher.beneficio.value}</span>
-                            </div>
-                            <div>
                               <span className="text-gray-600">Status:</span>
                               <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium ml-2">
                                 Aprovado
                               </span>
                             </div>
-                            <div className="col-span-2">
+                            <div>
                               <span className="text-gray-600">Validade:</span>
                               <span className="font-semibold text-gray-900 ml-2">
                                 {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString("pt-BR")}
@@ -905,65 +944,81 @@ const SolicitarBeneficio = () => {
           {currentStep === 1 && (
             <div className="bg-white rounded-lg border border-gray-200 p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-8">Escolha o Programa</h2>
-              
-              <div className="space-y-4">
-                {beneficios.map((beneficio) => (
-                  <Card 
-                    key={beneficio.id}
-                    className={`border transition-all cursor-pointer ${
-                      selectedBeneficios.includes(beneficio.id) 
-                        ? 'border-blue-600 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => handleBeneficioToggle(beneficio.id)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                            selectedBeneficios.includes(beneficio.id) ? 'bg-blue-600' : 'bg-gray-100'
+
+              {/* Estado de Loading */}
+              {isLoadingBeneficios ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+                  <p className="text-gray-600">Carregando benefícios disponíveis...</p>
+                </div>
+              ) : beneficios.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <Plus className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-600 text-center">
+                    Nenhum benefício disponível no momento.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {beneficios.map((beneficio) => (
+                    <Card
+                      key={beneficio.id}
+                      className={`border transition-all cursor-pointer ${
+                        selectedBeneficios.includes(beneficio.id)
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => handleBeneficioToggle(beneficio.id)}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                              selectedBeneficios.includes(beneficio.id) ? 'bg-blue-600' : 'bg-gray-100'
+                            }`}>
+                              <beneficio.icon className={`w-6 h-6 ${
+                                selectedBeneficios.includes(beneficio.id) ? 'text-white' : 'text-gray-600'
+                              }`} />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-900 mb-1">{beneficio.title}</h3>
+                              <p className="text-sm text-blue-600">{beneficio.description}</p>
+                            </div>
+                          </div>
+                          <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                            selectedBeneficios.includes(beneficio.id)
+                              ? 'bg-blue-600 border-blue-600'
+                              : 'border-gray-300'
                           }`}>
-                            <beneficio.icon className={`w-6 h-6 ${
-                              selectedBeneficios.includes(beneficio.id) ? 'text-white' : 'text-gray-600'
-                            }`} />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900 mb-1">{beneficio.title}</h3>
-                            <p className="text-sm text-blue-600 mb-2">{beneficio.description}</p>
-                            <p className="font-bold text-gray-900">Valor: {beneficio.value}</p>
+                            {selectedBeneficios.includes(beneficio.id) && (
+                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
                           </div>
                         </div>
-                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
-                          selectedBeneficios.includes(beneficio.id)
-                            ? 'bg-blue-600 border-blue-600'
-                            : 'border-gray-300'
-                        }`}>
-                          {selectedBeneficios.includes(beneficio.id) && (
-                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
               {/* Navigation Buttons */}
               <div className="flex items-center justify-between mt-8">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   onClick={() => navigate('/portalbeneficio')}
                   className="flex items-center text-gray-600 hover:text-gray-800"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Anterior
                 </Button>
-                
-                <Button 
+
+                <Button
                   onClick={handleNextStep}
-                  disabled={selectedBeneficios.length === 0}
+                  disabled={selectedBeneficios.length === 0 || isLoadingBeneficios}
                   className="flex items-center text-white"
                   style={{ backgroundColor: "#1E3A8A" }}
                 >
@@ -1084,7 +1139,7 @@ const SolicitarBeneficio = () => {
                             </div>
                             <div className="flex-1">
                               <p className="font-semibold text-gray-900">{beneficio.title}</p>
-                              <p className="text-sm text-blue-600">{beneficio.value}</p>
+                              <p className="text-sm text-blue-600">{beneficio.description}</p>
                             </div>
                           </div>
                         );
