@@ -118,8 +118,7 @@ const SolicitarBeneficio = () => {
   // Form data for step 2
   const [formData, setFormData] = useState({
     justificativa: "",
-    urgencia: "nao",  // Default to "Não" (not urgent)
-    informacoesAdicionais: ""
+    urgencia: "nao"  // Default to "Não" (not urgent)
   });
 
   // Função para obter as iniciais do nome
@@ -1052,7 +1051,7 @@ const SolicitarBeneficio = () => {
           </div>
 
           {/* Detalhes da Solicitação (exibido uma única vez para todos os vouchers) */}
-          {(formData.justificativa || formData.urgencia || formData.informacoesAdicionais) && (
+          {(formData.justificativa || formData.urgencia) && (
             <div className="bg-white rounded-lg shadow-lg p-6 mt-4 print:shadow-none print:p-4">
               <h4 className="font-semibold text-gray-900 mb-3 print:text-sm print:mb-2">Detalhes da Solicitação</h4>
               <div className="grid grid-cols-2 gap-3 text-xs">
@@ -1072,12 +1071,6 @@ const SolicitarBeneficio = () => {
                   <div className="col-span-2 print:hidden">
                     <p className="text-gray-600 mb-1">Justificativa:</p>
                     <p className="text-gray-900 text-xs">{formData.justificativa}</p>
-                  </div>
-                )}
-                {formData.informacoesAdicionais && (
-                  <div className="col-span-2 print:hidden">
-                    <p className="text-gray-600 mb-1">Informações Adicionais:</p>
-                    <p className="text-gray-900 text-xs">{formData.informacoesAdicionais}</p>
                   </div>
                 )}
               </div>
@@ -1111,8 +1104,7 @@ const SolicitarBeneficio = () => {
                 setVouchersGerados([]); // Limpa os vouchers gerados
                 setFormData({
                   justificativa: "",
-                  urgencia: "",
-                  informacoesAdicionais: ""
+                  urgencia: ""
                 });
               }}
             >
@@ -1295,19 +1287,6 @@ const SolicitarBeneficio = () => {
                   </Select>
                 </div>
 
-                {/* Informações Adicionais */}
-                <div className="space-y-2">
-                  <Label htmlFor="informacoesAdicionais" className="text-sm font-medium text-gray-900">
-                    Informações Adicionais
-                  </Label>
-                  <Textarea
-                    id="informacoesAdicionais"
-                    placeholder="Informações complementares (opcional)..."
-                    value={formData.informacoesAdicionais}
-                    onChange={(e) => setFormData({...formData, informacoesAdicionais: e.target.value})}
-                    className="min-h-[120px] resize-none bg-gray-50 border-gray-200"
-                  />
-                </div>
               </div>
               
               {/* Navigation Buttons */}
@@ -1409,14 +1388,6 @@ const SolicitarBeneficio = () => {
                       </p>
                     </div>
                   </div>
-                  {formData.informacoesAdicionais && (
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Informações Adicionais:</p>
-                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                        {formData.informacoesAdicionais}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
 

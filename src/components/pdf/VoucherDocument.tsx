@@ -13,7 +13,6 @@ export interface Beneficio {
 export interface FormData {
   justificativa: string;
   urgencia: string;
-  informacoesAdicionais: string;
 }
 
 export interface VoucherData {
@@ -271,7 +270,7 @@ const VoucherDocument = ({ data, dataGeracao, dataValidade }: VoucherDocumentPro
           {beneficios.length === 0 ? <Text style={styles.metaText}>Nenhum benefício selecionado.</Text> : null}
         </View>
 
-        {(formData.justificativa || formData.urgencia || formData.informacoesAdicionais) && (
+        {(formData.justificativa || formData.urgencia) && (
           <View style={styles.section} wrap>
             <Text style={styles.sectionTitle}>Detalhes da Solicitação</Text>
 
@@ -291,13 +290,6 @@ const VoucherDocument = ({ data, dataGeracao, dataValidade }: VoucherDocumentPro
               <View style={styles.detailBlock}>
                 <Text style={styles.detailLabel}>Justificativa</Text>
                 <Text style={styles.detailText}>{formData.justificativa}</Text>
-              </View>
-            ) : null}
-
-            {formData.informacoesAdicionais ? (
-              <View style={styles.detailBlock}>
-                <Text style={styles.detailLabel}>Informações Adicionais</Text>
-                <Text style={styles.detailText}>{formData.informacoesAdicionais}</Text>
               </View>
             ) : null}
           </View>
