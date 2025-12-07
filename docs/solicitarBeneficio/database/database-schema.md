@@ -6,13 +6,36 @@ Este documento define a estrutura de banco de dados necessária para armazenar o
 
 ---
 
-## 🚨 MUDANÇAS IMPORTANTES - Versão 6.0 (BREAKING CHANGES)
+## 🚨 MUDANÇAS IMPORTANTES - Versão 7.0 (BREAKING CHANGES)
 
 > **⚠️ Esta documentação foi atualizada para refletir a estrutura REAL da tabela `tbvoucher`**
 >
 > Principais mudanças em relação à versão anterior:
 
 ### ✅ Novidades Implementadas
+
+**🆕 v7.0 - Geração Automática de Número de Voucher**
+
+1. **Campo `numero_voucher` Adicionado**
+   - Novo campo `numero_voucher` VARCHAR(20) UNIQUE NOT NULL
+   - Formato: `VOU-XXXXXXXXXXXXXXXX` (16 caracteres hexadecimais)
+   - Gerado automaticamente via trigger BEFORE INSERT
+   - Usa `gen_random_bytes(8)` - criptograficamente seguro
+   - 2⁶⁴ combinações possíveis (~18 quintilhões)
+   - Não previsível e único garantido por constraint
+
+2. **Função `gerar_numero_voucher()`**
+   - Gera números únicos usando bytes aleatórios
+   - Loop de verificação para garantir unicidade
+   - Proteção contra colisões (improvável com 2⁶⁴ combinações)
+   - Performance O(log n) via índice B-Tree
+
+3. **Trigger `trg_gerar_numero_voucher`**
+   - Executa automaticamente antes de cada INSERT
+   - Preenche `numero_voucher` se não fornecido
+   - Garante que todo voucher tenha número único
+
+**v6.0 - Estrutura Base**
 
 1. **Soft Delete Completo em Todas as Tabelas**
    - Campo `deletado` CHAR(1) com valores 'N' ou 'S' em:
@@ -75,6 +98,10 @@ Este documento define a estrutura de banco de dados necessária para armazenar o
 - **Campos**: Usar novos nomes (`funcionario`, `email`, `matricula`)
 - **Benefícios**: Buscar `beneficio_titulo` de JOIN com `tbbeneficio`
 - **Auditoria**: Usar `auth.users(id)` (UUID) nas FKs de auditoria
+- **Número do Voucher (v7.0)**:
+  - **NÃO incluir** `numero_voucher` no INSERT (gerado automaticamente)
+  - **Recuperar** `numero_voucher` após INSERT com `.select('numero_voucher')`
+  - **Usar** `numero_voucher` para exibição ao usuário (ex: em PDF, QR Code, emails)
 
 ---
 
@@ -138,6 +165,7 @@ Tabela principal para armazenar os vouchers solicitados.
 CREATE TABLE tbvoucher (
     -- Identificação
     voucher_id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    numero_voucher VARCHAR(20) UNIQUE NOT NULL,
 
     -- Datas
     data_emissao DATE NOT NULL,
@@ -184,6 +212,7 @@ CREATE TABLE tbvoucher (
 -- Comentários da tabela
 COMMENT ON TABLE tbvoucher IS 'Tabela principal de vouchers de benefícios solicitados - cada voucher contém APENAS UM benefício';
 COMMENT ON COLUMN tbvoucher.voucher_id IS 'Identificador único do voucher (UUID v4) - usado diretamente no QR Code';
+COMMENT ON COLUMN tbvoucher.numero_voucher IS 'Número único do voucher gerado automaticamente no backend. Formato: VOU-XXXXXXXXXXXXXXXX (não previsível)';
 COMMENT ON COLUMN tbvoucher.funcionario_id IS 'Referência ao funcionário (INTEGER da tbfuncionario)';
 COMMENT ON COLUMN tbvoucher.funcionario IS 'Nome do funcionário no momento da emissão (desnormalizado para histórico)';
 COMMENT ON COLUMN tbvoucher.email IS 'Email do funcionário no momento da emissão (desnormalizado para histórico)';
@@ -641,6 +670,7 @@ ORDER BY b.beneficio;
 
 ```sql
 -- Índices na tabela tbvoucher
+CREATE UNIQUE INDEX idx_numero_voucher ON tbvoucher(numero_voucher);
 CREATE INDEX idx_voucher_funcionario_id ON tbvoucher(funcionario_id);
 CREATE INDEX idx_voucher_beneficio_id ON tbvoucher(beneficio_id);
 CREATE INDEX idx_voucher_status ON tbvoucher(status);
@@ -1437,9 +1467,113 @@ const getVoucherWithCache = async (voucherId: string) => {
 
 ## ⚙️ Funções Úteis (Stored Procedures)
 
-> **💡 Nota:** Como a tabela `tbvoucher` usa UUID (`voucher_id`) como identificador único,
-> não é necessário implementar funções de geração de números de voucher.
-> O PostgreSQL gera automaticamente UUIDs únicos através de `gen_random_uuid()`.
+### Função para Gerar Número de Voucher Único
+
+> **💡 Implementação v7.0:** A tabela `tbvoucher` agora possui o campo `numero_voucher` (VARCHAR(20))
+> que é gerado automaticamente no backend usando bytes aleatórios criptograficamente seguros.
+>
+> **Formato:** `VOU-XXXXXXXXXXXXXXXX` (16 caracteres hexadecimais)
+>
+> **Segurança:**
+> - ✅ Usa `gen_random_bytes(8)` - criptograficamente seguro
+> - ✅ 2⁶⁴ combinações possíveis (~18 quintilhões)
+> - ✅ Não previsível (impossível adivinhar próximo número)
+> - ✅ Gerado automaticamente via trigger BEFORE INSERT
+>
+> **Performance:**
+> - Loop de verificação de unicidade (fallback para casos raros de colisão)
+> - Constraint UNIQUE garante integridade
+> - Performance O(log n) mesmo com milhões de registros
+
+```sql
+-- ============================================
+-- Função para gerar número único (16 caracteres)
+-- Formato: VOU-XXXXXXXXXXXXXXXX
+-- ============================================
+CREATE OR REPLACE FUNCTION gerar_numero_voucher()
+RETURNS VARCHAR(20) AS $$
+DECLARE
+  novo_numero VARCHAR(20);
+  existe BOOLEAN;
+  tentativas INT := 0;
+  max_tentativas INT := 100;
+BEGIN
+  LOOP
+    -- Gera número aleatório seguro (16 caracteres hex)
+    -- gen_random_bytes(8) = 8 bytes = 16 caracteres hex
+    -- Exemplo: VOU-A3F7B2E1C4D9E6F8
+    novo_numero := 'VOU-' || UPPER(
+      encode(gen_random_bytes(8), 'hex')
+    );
+
+    -- Verifica se já existe
+    SELECT EXISTS(
+      SELECT 1 FROM tbvoucher WHERE numero_voucher = novo_numero
+    ) INTO existe;
+
+    -- Se não existe, retorna
+    IF NOT existe THEN
+      RETURN novo_numero;
+    END IF;
+
+    -- Proteção contra loop infinito
+    tentativas := tentativas + 1;
+    IF tentativas >= max_tentativas THEN
+      RAISE EXCEPTION 'Não foi possível gerar número único após % tentativas', max_tentativas;
+    END IF;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+COMMENT ON FUNCTION gerar_numero_voucher() IS
+'Gera número único de voucher usando 8 bytes aleatórios criptograficamente seguros. Formato: VOU-XXXXXXXXXXXXXXXX (16 caracteres hex)';
+```
+
+### Trigger para Gerar Número de Voucher Automaticamente
+
+```sql
+-- ============================================
+-- Trigger para preencher automaticamente numero_voucher
+-- ============================================
+CREATE OR REPLACE FUNCTION trigger_gerar_numero_voucher()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Se numero_voucher não foi fornecido, gera automaticamente
+  IF NEW.numero_voucher IS NULL OR NEW.numero_voucher = '' THEN
+    NEW.numero_voucher := gerar_numero_voucher();
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Aplicar trigger BEFORE INSERT
+CREATE TRIGGER trg_gerar_numero_voucher
+  BEFORE INSERT ON tbvoucher
+  FOR EACH ROW
+  EXECUTE FUNCTION trigger_gerar_numero_voucher();
+
+COMMENT ON TRIGGER trg_gerar_numero_voucher ON tbvoucher IS
+'Trigger que gera automaticamente numero_voucher antes de inserir registro';
+```
+
+**Uso:**
+```typescript
+// Frontend NÃO precisa gerar numero_voucher
+// O trigger gera automaticamente ao inserir
+
+const { data, error } = await supabase
+  .from('tbvoucher')
+  .insert([{
+    // ... outros campos
+    // numero_voucher: NÃO incluir - será gerado automaticamente
+  }])
+  .select('voucher_id, numero_voucher'); // Recuperar número gerado
+
+// data.numero_voucher conterá: "VOU-A3F7B2E1C4D9E6F8"
+```
+
+---
 
 ### Função para Validar Voucher por UUID (Scan do Parceiro)
 
@@ -1953,10 +2087,10 @@ WHERE deletado = 'S';
 - [ ] Inserir dados iniciais em `tbbeneficio` (seeds - com campo `valor_limite`, `parceiro_id`, sem campo `codigo`)
 - [ ] Criar tabela `tbvoucher` com:
   - `voucher_id UUID` como PK (gerado automaticamente)
+  - `numero_voucher VARCHAR(20) UNIQUE NOT NULL` (v7.0 - gerado via trigger)
   - `funcionario_id INTEGER` como FK para `tbfuncionario`
   - `beneficio_id INT4` como FK para `tbbeneficio` (relacionamento 1:1)
   - `beneficio_titulo` e `beneficio_descricao` (desnormalizados para histórico)
-  - **SEM** campo `numero_voucher`
   - **SEM** campo `funcionario_cpf` (segurança)
 - [ ] ~~Criar tabela `tbvoucher_beneficio`~~ ❌ **NÃO CRIAR** (não mais necessária)
 - [ ] Criar índices em `tbparceiro` (nome, cpf_cnpj, email, cidade, uf, ativo)
@@ -1979,7 +2113,8 @@ WHERE deletado = 'S';
 - [ ] Criar trigger de `updated_at` para `tbparceiro`
 - [ ] Criar trigger de `updated_at` para `tbbeneficio`
 - [ ] Criar trigger de expiração automática de vouchers
-- [ ] ~~Criar função `gerar_numero_voucher()`~~ (❌ NÃO NECESSÁRIO - usando UUID)
+- [ ] **✅ v7.0** Criar função `gerar_numero_voucher()` (gera número único VOU-XXXXXXXXXXXXXXXX)
+- [ ] **✅ v7.0** Criar trigger `trg_gerar_numero_voucher` (preenche numero_voucher automaticamente)
 - [ ] ~~Criar função `calcular_valor_voucher()`~~ (❌ NÃO NECESSÁRIO - valor já está em tbvoucher.valor)
 - [ ] Criar procedure `expirar_vouchers_vencidos()`
 - [ ] Criar função `validar_voucher_por_uuid()` (atualizada para relacionamento 1:1)
@@ -2197,11 +2332,22 @@ WHERE deletado = 'S';
 - ✅ Atualizado checklist de implementação
 - ✅ Atualizada tabela de impactos
 
+**v7.0 (07/12/2024)**
+- ✅ **Adicionado campo `numero_voucher` VARCHAR(20) UNIQUE NOT NULL**
+- ✅ **Criada função `gerar_numero_voucher()` usando `gen_random_bytes(8)`**
+- ✅ **Criado trigger `trg_gerar_numero_voucher` para geração automática**
+- ✅ Formato do número: `VOU-XXXXXXXXXXXXXXXX` (16 caracteres hexadecimais)
+- ✅ Geração criptograficamente segura com 2⁶⁴ combinações possíveis
+- ✅ Atualizado índice único para `numero_voucher`
+- ✅ Atualizada seção de Funções Úteis com documentação completa
+- ✅ Atualizado checklist de implementação
+- ✅ Adicionados exemplos de uso no TypeScript
+
 **v3.0 (03/12/2024)**
 - ✅ Renomeado campo `id` para `voucher_id` (UUID)
-- ✅ Removido campo `numero_voucher` (usar apenas UUID)
+- ❌ ~~Removido campo `numero_voucher`~~ (REVERTIDO em v7.0 - agora é necessário)
 - ✅ Removido campo `funcionario_cpf` (segurança - mantido apenas em tbfuncionario)
-- ✅ Removida toda seção de métodos de geração de número de voucher
+- ❌ ~~Removida toda seção de métodos de geração de número de voucher~~ (RESTAURADO em v7.0)
 - ✅ Atualizado diagrama de relacionamentos
 - ✅ Atualizado mapeamento de campos
 - ✅ Atualizado checklist de implementação
