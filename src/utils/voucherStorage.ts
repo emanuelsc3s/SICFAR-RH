@@ -5,7 +5,7 @@
 
 // Interface para os dados do voucher armazenado
 export interface VoucherEmitido {
-  id: string;                    // Número do voucher (ex: "VOU12345678")
+  id: string;                    // Número do voucher gerado pelo banco (ex: "VOU-A1B2C3D4E5F67890")
   funcionario: string;           // Nome completo do funcionário
   cpf: string;                   // CPF formatado (XXX.XXX.XXX-XX)
   valor: number;                 // Valor total do voucher

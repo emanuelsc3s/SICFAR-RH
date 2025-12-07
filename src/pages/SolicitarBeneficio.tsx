@@ -77,6 +77,12 @@ interface VoucherDatabaseInsert {
   deletado: 'N' | 'S';
 }
 
+// Interface para resposta do INSERT no banco (após trigger gerar numero_voucher)
+interface VoucherInsertResponse {
+  voucher_id: string;        // UUID gerado automaticamente
+  numero_voucher: string;    // VOU-XXXXXXXXXXXXXXXX gerado pelo trigger
+}
+
 // Mapa de ícones Lucide React
 const iconMap: Record<string, LucideIcon> = {
   'flame': Flame,
@@ -280,9 +286,13 @@ const SolicitarBeneficio = () => {
     }
   };
 
-  const generateVoucherNumber = () => {
-    return `VOU${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`;
-  };
+  // =====================================================================
+  // NOTA: Geração local de numero_voucher foi REMOVIDA
+  // Motivo: O banco de dados gera automaticamente via trigger
+  // Trigger: trg_gerar_numero_voucher
+  // Função: gerar_numero_voucher() usando gen_random_bytes(8)
+  // Formato: VOU-XXXXXXXXXXXXXXXX (16 caracteres hexadecimais)
+  // =====================================================================
 
   /**
    * Gera QR Code para um voucher específico
@@ -348,16 +358,29 @@ const SolicitarBeneficio = () => {
    * LÓGICA DE GERAÇÃO DE VOUCHERS INDIVIDUAIS:
    * - Para cada benefício selecionado pelo usuário, é gerado UM voucher separado
    * - Isso significa que se o usuário selecionar 3 benefícios, serão gerados 3 vouchers
+   * - Cada voucher é salvo no banco de dados (trigger gera numero_voucher)
    * - Cada voucher possui seu próprio número único, QR Code e PDF
-   * - Cada voucher é salvo individualmente no localStorage
    * - Cada voucher é enviado em um e-mail separado para o colaborador
+   *
+   * FLUXO DE PROCESSAMENTO (ORDEM CRÍTICA):
+   * 1. INSERT no banco → trigger gera numero_voucher automaticamente
+   * 2. Recupera voucher_id (UUID) + numero_voucher do banco
+   * 3. Gera QR Code usando numero_voucher do banco
+   * 4. Gera PDF usando numero_voucher do banco
+   * 5. Envia email usando numero_voucher do banco
+   *
+   * IMPORTANTE:
+   * - O numero_voucher é gerado pelo BANCO via trigger (NÃO pelo frontend)
+   * - Formato: VOU-XXXXXXXXXXXXXXXX (20 chars: "VOU-" + 16 hex)
+   * - Gerado via gen_random_bytes(8) - criptograficamente seguro
+   * - Único garantido por índice UNIQUE no banco
    *
    * EXEMPLO:
    * Se o usuário seleciona: Vale Gás + Vale Farmácia + Vale Transporte
    * Serão gerados:
-   *   - Voucher VOU12345601 → Vale Gás (PDF + Email)
-   *   - Voucher VOU12345602 → Vale Farmácia (PDF + Email)
-   *   - Voucher VOU12345603 → Vale Transporte (PDF + Email)
+   *   - Voucher VOU-A1B2C3D4E5F67890 → Vale Gás (PDF + Email)
+   *   - Voucher VOU-1234567890ABCDEF → Vale Farmácia (PDF + Email)
+   *   - Voucher VOU-FEDCBA9876543210 → Vale Transporte (PDF + Email)
    *
    * =====================================================================
    */
@@ -587,21 +610,104 @@ const SolicitarBeneficio = () => {
         console.log(`\n📦 [${index + 1}/${selectedBeneficios.length}] Processando benefício: ${beneficio.title}`);
 
         try {
-          // -----------------------------------------------------------------
-          // Passo 1: Gerar número único do voucher para este benefício
-          // -----------------------------------------------------------------
-          const voucherNumber = generateVoucherNumber();
-          console.log(`  📝 Número do voucher gerado: ${voucherNumber}`);
+          // =================================================================
+          // PASSO 1: INSERIR NO BANCO PRIMEIRO (trigger gera numero_voucher)
+          // =================================================================
+          console.log(`  💾 Inserindo voucher no banco de dados...`);
 
-          // -----------------------------------------------------------------
-          // Passo 2: Gerar QR Code específico para este voucher/benefício
-          // -----------------------------------------------------------------
+          // Validar beneficio_id antes de inserir
+          const beneficioIdNumber = parseInt(beneficio.id, 10);
+          if (isNaN(beneficioIdNumber)) {
+            console.error(`  ❌ beneficio_id inválido:`, beneficio.id);
+            vouchersComErroBanco++;
+            continue; // Pula para próximo benefício
+          }
+
+          // Obter valor do benefício do mapa
+          const valorBeneficio = beneficioValorMap.get(beneficioIdNumber) || 0;
+          console.log(`  💰 Valor do benefício: R$ ${valorBeneficio}`);
+
+          // Preparar objeto para inserção
+          const voucherToInsert: VoucherDatabaseInsert = {
+            // Datas
+            data_emissao: dataEmissao,
+            data_validade: dataValidadeFormatted,
+
+            // Funcionário (snapshot + FK opcional)
+            funcionario_id: funcionarioId,
+            funcionario: colaborador.nome,
+            email: colaborador.email,
+            matricula: colaborador.matricula,
+
+            // Benefício (1:1)
+            beneficio_id: beneficioIdNumber,
+
+            // Detalhes da solicitação
+            justificativa: formData.justificativa || null,
+            urgente: isUrgent,
+
+            // Status e valor
+            status: 'emitido',
+            valor: valorBeneficio,
+
+            // Auditoria
+            created_nome: colaborador.nome,
+            created_by: userId,
+            deletado: 'N'
+          };
+
+          // ✅ INSERIR E RECUPERAR voucher_id + numero_voucher
+          const { data: voucherInserido, error: insertError } = await supabase
+            .from('tbvoucher')
+            .insert([voucherToInsert])
+            .select('voucher_id, numero_voucher')  // ✅ MUDANÇA CRÍTICA: recuperar numero_voucher
+            .single();
+
+          // ✅ VALIDAR RESPOSTA DO BANCO
+          if (insertError || !voucherInserido) {
+            console.error(`  ❌ Erro ao inserir voucher no banco:`, insertError);
+            vouchersComErroBanco++;
+
+            toast.warning('Erro ao salvar voucher no banco', {
+              description: `Benefício "${beneficio.title}" não foi processado. Tente novamente.`,
+              duration: 5000
+            });
+
+            continue; // Pula para próximo benefício
+          }
+
+          // ✅ RECUPERAR numero_voucher DO BANCO
+          const voucherNumber = voucherInserido.numero_voucher;
+          const voucherId = voucherInserido.voucher_id;
+
+          // ✅ VALIDAR FORMATO do numero_voucher
+          if (!voucherNumber || !voucherNumber.startsWith('VOU-') || voucherNumber.length !== 20) {
+            console.error(`  ❌ Formato inválido de numero_voucher: "${voucherNumber}"`);
+            console.error(`     Esperado: VOU-XXXXXXXXXXXXXXXX (20 chars)`);
+            vouchersComErroBanco++;
+
+            toast.error('Erro no formato do voucher', {
+              description: 'O voucher gerado está em formato inválido. Contate o suporte.',
+              duration: 8000
+            });
+
+            continue; // Pula para próximo benefício
+          }
+
+          console.log(`  ✅ Voucher inserido no banco:`);
+          console.log(`     → UUID: ${voucherId}`);
+          console.log(`     → Número: ${voucherNumber}`);
+          console.log(`     → Formato validado: ${voucherNumber.length} caracteres`);
+
+          // =================================================================
+          // PASSO 2: GERAR QR CODE com numero_voucher do banco
+          // =================================================================
           const qrCodeUrlIndividual = await generateQRCodeForVoucher(voucherNumber, beneficioId);
-          console.log(`  📱 QR Code gerado para: ${beneficio.title}`);
+          console.log(`  📱 QR Code gerado`);
 
-          // -----------------------------------------------------------------
-          // Passo 3: Preparar benefício formatado para PDF
-          // -----------------------------------------------------------------
+          // =================================================================
+          // PASSO 3: PREPARAR BENEFÍCIO PARA PDF
+          // =================================================================
           const beneficioFormatado = {
             id: beneficio.id,
             title: beneficio.title,
@@ -609,82 +715,11 @@ const SolicitarBeneficio = () => {
             icon: beneficio.icon
           };
 
-          // -----------------------------------------------------------------
-          // Passo 4: Inserir voucher no banco de dados Supabase
-          // -----------------------------------------------------------------
-          console.log(`  💾 Inserindo voucher no banco de dados...`);
-
-          try {
-            // Validar beneficio_id antes de inserir
-            const beneficioIdNumber = parseInt(beneficio.id, 10);
-
-            if (isNaN(beneficioIdNumber)) {
-              console.error(`  ❌ beneficio_id inválido:`, beneficio.id);
-              vouchersComErroBanco++;
-            } else {
-              // Obter valor do benefício do mapa
-              const valorBeneficio = beneficioValorMap.get(beneficioIdNumber) || 0;
-              console.log(`  💰 Valor do benefício: R$ ${valorBeneficio}`);
-
-              // Preparar objeto para inserção
-              const voucherToInsert: VoucherDatabaseInsert = {
-                // Datas
-                data_emissao: dataEmissao,
-                data_validade: dataValidadeFormatted,
-
-                // Funcionário (snapshot + FK opcional)
-                funcionario_id: funcionarioId,
-                funcionario: colaborador.nome,
-                email: colaborador.email,
-                matricula: colaborador.matricula,
-
-                // Benefício (1:1)
-                beneficio_id: beneficioIdNumber,
-
-                // Detalhes da solicitação
-                justificativa: formData.justificativa || null,
-                urgente: isUrgent,
-
-                // Status e valor
-                status: 'emitido',
-                valor: valorBeneficio,
-
-                // Auditoria
-                created_nome: colaborador.nome,
-                created_by: userId,
-                deletado: 'N'
-              };
-
-              // Inserir no banco
-              const { data: voucherInserido, error: insertError } = await supabase
-                .from('tbvoucher')
-                .insert([voucherToInsert])
-                .select('voucher_id')
-                .single();
-
-              if (insertError) {
-                console.error(`  ❌ Erro ao inserir voucher no banco:`, insertError);
-                vouchersComErroBanco++;
-
-                toast.warning('Voucher gerado, mas não foi salvo no banco de dados', {
-                  description: `Voucher ${voucherNumber} disponível localmente.`,
-                  duration: 5000
-                });
-              } else {
-                console.log(`  ✅ Voucher inserido no banco - UUID:`, voucherInserido.voucher_id);
-              }
-            }
-
-          } catch (dbError) {
-            console.error(`  ❌ Erro inesperado ao inserir no banco:`, dbError);
-            vouchersComErroBanco++;
-          }
-
-          // -----------------------------------------------------------------
-          // Passo 6: Gerar PDF do voucher individual (apenas 1 benefício)
-          // -----------------------------------------------------------------
+          // =================================================================
+          // PASSO 4: GERAR PDF com numero_voucher do banco
+          // =================================================================
           const pdfBase64 = await generateVoucherPDF({
-            voucherNumber,
+            voucherNumber,  // ✅ Agora vem do banco
             beneficios: [beneficioFormatado], // Array com apenas 1 benefício
             formData,
             qrCodeUrl: qrCodeUrlIndividual,
@@ -694,12 +729,12 @@ const SolicitarBeneficio = () => {
               email: colaborador.email
             }
           });
-          console.log(`  📄 PDF gerado para: ${beneficio.title}`);
+          console.log(`  📄 PDF gerado`);
 
-          // -----------------------------------------------------------------
-          // Passo 7: Enviar e-mail individual com o voucher deste benefício
-          // -----------------------------------------------------------------
-          console.log(`  📧 Enviando e-mail para voucher: ${voucherNumber}...`);
+          // =================================================================
+          // PASSO 5: ENVIAR EMAIL com numero_voucher do banco
+          // =================================================================
+          console.log(`  📧 Enviando e-mail...`);
 
           try {
             const response = await fetch('http://localhost:3001/api/send-voucher-email', {
@@ -710,7 +745,7 @@ const SolicitarBeneficio = () => {
               body: JSON.stringify({
                 destinatario: colaborador.email,
                 nomeDestinatario: colaborador.nome,
-                voucherNumber,
+                voucherNumber,  // ✅ Agora vem do banco
                 beneficios: [beneficioFormatado], // Apenas 1 benefício no email
                 pdfBase64,
                 formData
@@ -724,7 +759,7 @@ const SolicitarBeneficio = () => {
             const result = await response.json();
 
             if (result.success) {
-              console.log(`  ✅ E-mail enviado com sucesso para voucher: ${voucherNumber}`);
+              console.log(`  ✅ E-mail enviado`);
               vouchersComSucesso++;
             } else {
               throw new Error(result.message || 'Erro ao enviar e-mail');
@@ -732,13 +767,16 @@ const SolicitarBeneficio = () => {
 
           } catch (emailError) {
             // Erro no envio de e-mail não impede a geração do voucher
-            console.warn(`  ⚠️ Erro ao enviar e-mail do voucher ${voucherNumber}:`, emailError);
+            console.warn(`  ⚠️ Erro ao enviar e-mail:`, emailError);
             vouchersComErroEmail++;
+            // ℹ️ Não impede o fluxo - voucher foi salvo no banco
           }
 
-          // Adiciona o voucher processado à lista de vouchers gerados
+          // =================================================================
+          // PASSO 6: ADICIONAR À LISTA DE VOUCHERS PROCESSADOS
+          // =================================================================
           vouchersProcessados.push({
-            voucherNumber,
+            voucherNumber,  // ✅ Agora vem do banco
             beneficio,
             qrCodeUrl: qrCodeUrlIndividual
           });
