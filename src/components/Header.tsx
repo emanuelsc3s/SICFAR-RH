@@ -1,6 +1,5 @@
-import { Search, Bell, Settings, LogOut, CheckCircle, Clock, XCircle, ClipboardCheck, ExternalLink } from "lucide-react";
+import { Bell, Settings, LogOut, CheckCircle, Clock, XCircle, ClipboardCheck, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -126,14 +125,6 @@ const Header = () => {
           <div>
             <h1 className="text-xl font-semibold text-foreground">Portal Corporativo</h1>
             <p className="text-sm text-muted-foreground">Intranet & Recursos Humanos</p>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="flex-1 max-w-md mx-8">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input placeholder="Buscar funcionários, documentos, políticas..." className="pl-10 bg-muted/50 border-border/50" />
           </div>
         </div>
 

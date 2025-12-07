@@ -1,5 +1,9 @@
 # Documentação do Projeto SICFAR-RH
 
+## Idioma e Comunicação
+
+**IMPORTANTE**: Sempre responda em português brasileiro, escreva comentários no código em português e gere toda documentação em português.
+
 ## 📝 Regras de Documentação
 
 - Só crie arquivo de documentação quando claramente solicitado.
