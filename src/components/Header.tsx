@@ -10,22 +10,13 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { NotificacaoSolicitacao } from "@/types/notificacao";
 import { carregarSolicitacoes, marcarTodasComoLidas } from "@/utils/solicitacoesStorage";
-import { supabase } from "@/lib/supabase";
-
-interface UsuarioPerfil {
-  nomeVisual: string; // Nome visual do usuário (de tbusuario.usuario)
-  nome: string; // Nome completo do funcionário (de tbfuncionario.nome)
-  cargo?: string;
-  email?: string; // Email do usuário (de auth.users.email)
-  matricula?: string;
-}
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const navigate = useNavigate();
+  const { user, isLoading: isPerfilCarregando, logout } = useAuth();
   const [notificacoes, setNotificacoes] = useState<NotificacaoSolicitacao[]>([]);
   const [isNotificacoesOpen, setIsNotificacoesOpen] = useState(false);
-  const [perfilUsuario, setPerfilUsuario] = useState<UsuarioPerfil | null>(null);
-  const [isPerfilCarregando, setIsPerfilCarregando] = useState(true);
   const [isPerfilMenuOpen, setIsPerfilMenuOpen] = useState(false);
 
   // Carregar notificações do localStorage ao montar o componente
@@ -43,119 +34,6 @@ const Header = () => {
       window.removeEventListener('solicitacoesAtualizadas', handleSolicitacoesAtualizadas);
     };
   }, []);
-
-  // Carregar dados do usuário autenticado (tbusuario + tbfuncionario)
-  useEffect(() => {
-    let isMounted = true;
-    let fallbackPerfil: UsuarioPerfil = {
-      nomeVisual: 'Usuário',
-      nome: 'Usuário',
-      cargo: 'Colaborador',
-      email: '',
-      matricula: ''
-    };
-
-    const carregarDadosUsuario = async () => {
-      setIsPerfilCarregando(true);
-
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError) {
-          throw sessionError;
-        }
-
-        if (!session?.user) {
-          navigate('/login');
-          return;
-        }
-
-        fallbackPerfil = {
-          nomeVisual: session.user.user_metadata?.nome || session.user.email || 'Usuário',
-          nome: session.user.user_metadata?.nome || session.user.email || 'Usuário',
-          cargo: session.user.user_metadata?.cargo || 'Colaborador',
-          email: session.user.email || '',
-          matricula: session.user.user_metadata?.matricula || ''
-        };
-
-        // Busca o usuário na tbusuario pelo user_id do Supabase Auth
-        // Faz join com tbfuncionario através do funcionario_id
-        const { data: usuarios, error: usuarioError } = await supabase
-          .from('tbusuario')
-          .select(`
-            usuario_id,
-            usuario,
-            funcionario_id,
-            perfil_id,
-            deletado,
-            tbfuncionario:funcionario_id (
-              matricula,
-              cargo,
-              nome
-            )
-          `)
-          .eq('user_id', session.user.id)
-          .eq('deletado', 'N')
-          .limit(1);
-
-        console.log('🔍 Query result:', {
-          usuarios,
-          usuarioError,
-          count: usuarios?.length
-        });
-
-        if (usuarioError) {
-          console.error("Erro ao buscar usuário:", usuarioError);
-          throw usuarioError;
-        }
-
-        const usuario = usuarios?.[0];
-        // O join retorna um array, então pegamos o primeiro elemento
-        const funcionarioArray = usuario?.tbfuncionario as any;
-        const funcionario = Array.isArray(funcionarioArray) ? funcionarioArray[0] : funcionarioArray;
-
-        // Monta o perfil com os dados corretos
-        // nomeVisual: tbusuario.usuario (nome visual do usuário)
-        // nome: tbfuncionario.nome (nome completo do funcionário)
-        // email: session.user.email (auth.users)
-        // cargo e matrícula: tbfuncionario
-        const perfil: UsuarioPerfil = {
-          nomeVisual: usuario?.usuario || fallbackPerfil.nomeVisual || 'Usuário',
-          nome: funcionario?.nome || fallbackPerfil.nome || 'Usuário',
-          cargo: funcionario?.cargo || fallbackPerfil.cargo || 'Colaborador',
-          email: session.user.email || fallbackPerfil.email || '',
-          matricula: funcionario?.matricula || fallbackPerfil.matricula || ''
-        };
-
-        console.log('✅ Perfil do usuário:', {
-          nomeVisual: perfil.nomeVisual,
-          cargo: perfil.cargo,
-          email: perfil.email,
-          matricula: perfil.matricula
-        });
-
-        if (isMounted) {
-          setPerfilUsuario(perfil);
-        }
-      } catch (error) {
-        console.error("Erro ao carregar dados do usuário:", error);
-
-        if (isMounted) {
-          setPerfilUsuario(prev => prev || fallbackPerfil);
-        }
-      } finally {
-        if (isMounted) {
-          setIsPerfilCarregando(false);
-        }
-      }
-    };
-
-    carregarDadosUsuario();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [navigate]);
 
   const carregarNotificacoesDoStorage = () => {
     const dados = carregarSolicitacoes();
@@ -223,21 +101,15 @@ const Header = () => {
 
   const handleLogout = async () => {
     setIsPerfilMenuOpen(false);
-
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error("Erro ao sair da aplicação:", error);
-    } finally {
-      localStorage.removeItem('colaboradorLogado');
-      navigate('/login');
-    }
+    await logout();
+    navigate('/login');
   };
 
-  const nomeVisualExibicao = perfilUsuario?.nomeVisual || 'Usuário';
-  const cargoExibicao = perfilUsuario?.cargo || 'Colaborador';
-  const emailExibicao = perfilUsuario?.email || 'Email não encontrado';
-  const matriculaExibicao = perfilUsuario?.matricula || 'Não informada';
+  // Dados do usuário vindos do AuthContext
+  const nomeVisualExibicao = user?.nomeUsuario || 'Usuário';
+  const cargoExibicao = user?.cargo || 'Colaborador';
+  const emailExibicao = user?.email || 'Email não encontrado';
+  const matriculaExibicao = user?.matricula || 'Não informada';
   const avatarFallback = getInitials(nomeVisualExibicao);
 
   return (

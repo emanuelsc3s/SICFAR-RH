@@ -20,6 +20,7 @@ import QRCode from "qrcode";
 import { toast } from "sonner";
 import { generateVoucherPDF } from "@/utils/pdfGenerator";
 import { supabase } from "@/lib/supabase";
+import DebugAuth from "@/components/DebugAuth";
 
 // Interface para os dados do colaborador
 interface ColaboradorData {
@@ -421,44 +422,82 @@ const SolicitarBeneficio = () => {
     console.log('✅ Usuário autenticado:', userId);
 
     // ===================================================================
-    // Buscar funcionario_id por matrícula (opcional, não quebra se falhar)
+    // VALIDAÇÃO: Verificar se funcionário existe e está ATIVO (não demitido)
+    // Busca por MATRÍCULA e valida dt_rescisao IS NULL
     // ===================================================================
-    console.log('🔍 Buscando funcionario_id...');
+    console.log('🔍 Validando funcionário na tbfuncionario...');
+    console.log('📋 Matrícula da sessão:', colaborador.matricula);
 
     let funcionarioId: number | null = null;
+
+    // Verificar se tem matrícula na sessão
+    if (!colaborador.matricula || colaborador.matricula.trim() === '') {
+      console.error('❌ Matrícula não encontrada na sessão do colaborador');
+      setIsProcessing(false);
+      toast.error('Dados incompletos', {
+        description: 'Sua matrícula não foi encontrada. Faça logout e login novamente ou contate o RH.',
+        duration: 8000
+      });
+      return;
+    }
 
     try {
       const { data: funcionarioData, error: funcionarioError } = await supabase
         .from('tbfuncionario')
-        .select('funcionario_id, cpf, nome, email, matricula')
-        .eq('email', colaborador.email)
+        .select('funcionario_id, cpf, nome, email, matricula, dt_rescisao')
+        .eq('matricula', colaborador.matricula.trim())
         .single();
 
+      // Caso 1: Funcionário não encontrado pela matrícula
       if (funcionarioError) {
         console.error('❌ Funcionário não encontrado na tbfuncionario:', funcionarioError);
-        toast.error('Erro de cadastro', {
-          description: 'Você não está cadastrado como funcionário. Contate o RH.',
-          duration: 8000
+        console.error('📋 Matrícula buscada:', colaborador.matricula);
+        setIsProcessing(false);
+        toast.error('Matrícula não encontrada', {
+          description: `A matrícula "${colaborador.matricula}" não foi encontrada no cadastro de funcionários. Contate o RH.`,
+          duration: 10000
         });
+        navigate('/portalbeneficio');
         return;
       }
 
+      // Caso 2: Dados incompletos
       if (!funcionarioData || !funcionarioData.funcionario_id) {
         console.error('❌ Dados do funcionário incompletos');
-        toast.error('Erro de cadastro', {
-          description: 'Cadastro incompleto. Contate o RH.',
+        setIsProcessing(false);
+        toast.error('Cadastro incompleto', {
+          description: 'Seu cadastro está incompleto na tabela de funcionários. Contate o RH.',
           duration: 8000
         });
+        navigate('/portalbeneficio');
         return;
       }
 
+      // Caso 3: Funcionário DEMITIDO (dt_rescisao preenchida)
+      if (funcionarioData.dt_rescisao !== null) {
+        console.error('❌ Funcionário DEMITIDO - dt_rescisao:', funcionarioData.dt_rescisao);
+        setIsProcessing(false);
+        toast.error('Colaborador desligado', {
+          description: 'Você não pode solicitar benefícios pois consta como desligado no sistema. Em caso de dúvida, contate o RH.',
+          duration: 10000
+        });
+        navigate('/portalbeneficio');
+        return;
+      }
+
+      // ✅ Funcionário encontrado e ATIVO
       funcionarioId = funcionarioData.funcionario_id;
-      console.log('✅ funcionario_id encontrado:', funcionarioId);
-      console.log('✅ CPF recuperado do banco:', funcionarioData.cpf);
+      console.log('✅ Funcionário ATIVO encontrado!');
+      console.log('   → funcionario_id:', funcionarioId);
+      console.log('   → Nome:', funcionarioData.nome);
+      console.log('   → CPF:', funcionarioData.cpf);
+      console.log('   → dt_rescisao:', funcionarioData.dt_rescisao, '(null = ativo)');
+
     } catch (error) {
-      console.error('❌ Erro ao buscar funcionário:', error);
-      toast.error('Erro ao buscar dados do funcionário', {
-        description: 'Não foi possível verificar seu cadastro.',
+      console.error('❌ Erro ao validar funcionário:', error);
+      setIsProcessing(false);
+      toast.error('Erro ao validar funcionário', {
+        description: 'Não foi possível verificar seu cadastro. Tente novamente ou contate o suporte.',
         duration: 5000
       });
       return;
@@ -508,6 +547,7 @@ const SolicitarBeneficio = () => {
 
       if (beneficiosError) {
         console.error('❌ Erro ao buscar valores dos benefícios:', beneficiosError);
+        setIsProcessing(false);
         toast.error('Erro ao buscar dados dos benefícios', {
           description: 'Não foi possível carregar os valores. Tente novamente.',
           duration: 5000
@@ -517,6 +557,7 @@ const SolicitarBeneficio = () => {
 
       if (!beneficiosData || beneficiosData.length !== selectedBeneficios.length) {
         console.error('❌ Alguns benefícios não foram encontrados no banco');
+        setIsProcessing(false);
         toast.error('Erro ao validar benefícios', {
           description: 'Alguns benefícios selecionados não estão disponíveis.',
           duration: 5000
@@ -1426,6 +1467,9 @@ const SolicitarBeneficio = () => {
           )}
         </div>
       )}
+
+      {/* Componente de Debug - REMOVER após verificar que os dados estão corretos */}
+      <DebugAuth />
     </div>
   );
 };

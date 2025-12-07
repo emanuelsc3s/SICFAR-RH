@@ -139,19 +139,11 @@ const Login = () => {
 
       if (data.user) {
         console.log("✅ Login bem-sucedido:", data.user.email);
-
-        // Salva dados do usuário no localStorage para compatibilidade com o resto do sistema
-        const colaboradorData = {
-          id: data.user.id,
-          email: data.user.email || '',
-          nome: data.user.user_metadata?.nome || data.user.email?.split('@')[0] || 'Usuário',
-          matricula: data.user.user_metadata?.matricula || '',
-          cpf: data.user.user_metadata?.cpf || '',
-          dataNascimento: data.user.user_metadata?.dataNascimento || '',
-          loginTimestamp: new Date().toISOString()
-        };
-
-        localStorage.setItem('colaboradorLogado', JSON.stringify(colaboradorData));
+        
+        // O AuthContext irá automaticamente:
+        // 1. Capturar o evento SIGNED_IN
+        // 2. Buscar dados completos do usuário (tbusuario + tbfuncionario)
+        // 3. Salvar no localStorage para compatibilidade
 
         // Redireciona para página principal
         navigate('/solicitarbeneficio');

@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -31,41 +32,43 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Rota pública - Login */}
-          <Route path="/login" element={<Login />} />
+    <BrowserRouter>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            {/* Rota pública - Login */}
+            <Route path="/login" element={<Login />} />
 
-          {/* Rotas protegidas - Requerem autenticação */}
-          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-          <Route path="/aniversariantes" element={<ProtectedRoute><Aniversariantes /></ProtectedRoute>} />
-          <Route path="/manualgestor" element={<ProtectedRoute><ManualGestor /></ProtectedRoute>} />
-          <Route path="/faq" element={<ProtectedRoute><FAQ /></ProtectedRoute>} />
-          <Route path="/configuracao" element={<ProtectedRoute><Configuracao /></ProtectedRoute>} />
-          <Route path="/chatlisai" element={<ProtectedRoute><ChatLisAI /></ProtectedRoute>} />
-          <Route path="/portalbeneficio" element={<ProtectedRoute><PortalBeneficio /></ProtectedRoute>} />
-          <Route path="/solicitarbeneficio" element={<ProtectedRoute><SolicitarBeneficio /></ProtectedRoute>} />
-          <Route path="/beneficiofaturas" element={<ProtectedRoute><BeneficioFaturas /></ProtectedRoute>} />
-          <Route path="/beneficiofaturadetalhe/:faturaId" element={<ProtectedRoute><BeneficioFaturaDetalhe /></ProtectedRoute>} />
-          <Route path="/noticiasexternas" element={<ProtectedRoute><NoticiasExternas /></ProtectedRoute>} />
-          <Route path="/comunicacao" element={<ProtectedRoute><Comunicacao /></ProtectedRoute>} />
-          <Route path="/comunicacao/admin" element={<ProtectedRoute><ComunicacaoAdmin /></ProtectedRoute>} />
-          <Route path="/scannerparceiro" element={<ProtectedRoute><ScannerParceiro /></ProtectedRoute>} />
-          <Route path="/solicitarsaidaantecipada" element={<ProtectedRoute><SolicitarSaidaAntecipada /></ProtectedRoute>} />
-          <Route path="/solicitarferias" element={<ProtectedRoute><SolicitarFerias /></ProtectedRoute>} />
-          <Route path="/solicitartransferencia" element={<ProtectedRoute><SolicitarTransferencia /></ProtectedRoute>} />
-          <Route path="/enviaratestado" element={<ProtectedRoute><EnviarAtestado /></ProtectedRoute>} />
-          <Route path="/meusatestados" element={<ProtectedRoute><MeusAtestados /></ProtectedRoute>} />
-          <Route path="/autorizacaoautoatendimento" element={<ProtectedRoute><AutorizacaoAutoatendimento /></ProtectedRoute>} />
+            {/* Rotas protegidas - Requerem autenticação */}
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/aniversariantes" element={<ProtectedRoute><Aniversariantes /></ProtectedRoute>} />
+            <Route path="/manualgestor" element={<ProtectedRoute><ManualGestor /></ProtectedRoute>} />
+            <Route path="/faq" element={<ProtectedRoute><FAQ /></ProtectedRoute>} />
+            <Route path="/configuracao" element={<ProtectedRoute><Configuracao /></ProtectedRoute>} />
+            <Route path="/chatlisai" element={<ProtectedRoute><ChatLisAI /></ProtectedRoute>} />
+            <Route path="/portalbeneficio" element={<ProtectedRoute><PortalBeneficio /></ProtectedRoute>} />
+            <Route path="/solicitarbeneficio" element={<ProtectedRoute><SolicitarBeneficio /></ProtectedRoute>} />
+            <Route path="/beneficiofaturas" element={<ProtectedRoute><BeneficioFaturas /></ProtectedRoute>} />
+            <Route path="/beneficiofaturadetalhe/:faturaId" element={<ProtectedRoute><BeneficioFaturaDetalhe /></ProtectedRoute>} />
+            <Route path="/noticiasexternas" element={<ProtectedRoute><NoticiasExternas /></ProtectedRoute>} />
+            <Route path="/comunicacao" element={<ProtectedRoute><Comunicacao /></ProtectedRoute>} />
+            <Route path="/comunicacao/admin" element={<ProtectedRoute><ComunicacaoAdmin /></ProtectedRoute>} />
+            <Route path="/scannerparceiro" element={<ProtectedRoute><ScannerParceiro /></ProtectedRoute>} />
+            <Route path="/solicitarsaidaantecipada" element={<ProtectedRoute><SolicitarSaidaAntecipada /></ProtectedRoute>} />
+            <Route path="/solicitarferias" element={<ProtectedRoute><SolicitarFerias /></ProtectedRoute>} />
+            <Route path="/solicitartransferencia" element={<ProtectedRoute><SolicitarTransferencia /></ProtectedRoute>} />
+            <Route path="/enviaratestado" element={<ProtectedRoute><EnviarAtestado /></ProtectedRoute>} />
+            <Route path="/meusatestados" element={<ProtectedRoute><MeusAtestados /></ProtectedRoute>} />
+            <Route path="/autorizacaoautoatendimento" element={<ProtectedRoute><AutorizacaoAutoatendimento /></ProtectedRoute>} />
 
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
