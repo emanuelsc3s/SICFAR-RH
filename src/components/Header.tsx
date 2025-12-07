@@ -123,7 +123,7 @@ const Header = () => {
           }} />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Portal Corporativo</h1>
+            <h1 className="text-xl font-semibold text-foreground">SICFAR - RH</h1>
             <p className="text-sm text-muted-foreground">Intranet & Recursos Humanos</p>
           </div>
         </div>
