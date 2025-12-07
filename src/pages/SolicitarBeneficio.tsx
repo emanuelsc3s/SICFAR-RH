@@ -20,7 +20,6 @@ import QRCode from "qrcode";
 import { toast } from "sonner";
 import { generateVoucherPDF } from "@/utils/pdfGenerator";
 import { supabase } from "@/lib/supabase";
-import DebugAuth from "@/components/DebugAuth";
 
 // Interface para os dados do colaborador
 interface ColaboradorData {
@@ -1467,9 +1466,6 @@ const SolicitarBeneficio = () => {
           )}
         </div>
       )}
-
-      {/* Componente de Debug - REMOVER após verificar que os dados estão corretos */}
-      <DebugAuth />
     </div>
   );
 };

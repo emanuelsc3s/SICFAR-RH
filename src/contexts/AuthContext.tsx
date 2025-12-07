@@ -98,12 +98,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw queryError;
       }
 
-      // 🔍 DEBUG: Log da resposta completa da query
-      console.log('🔍 DEBUG - Query response:', {
-        totalUsuarios: usuarios?.length,
-        primeiroUsuario: usuarios?.[0],
-      });
-
       const usuario = usuarios?.[0] as SupabaseUserData | undefined;
       
       // O JOIN pode retornar um array ou objeto único, tratamos ambos casos
@@ -111,14 +105,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const funcionario = Array.isArray(funcionarioData)
         ? funcionarioData[0]
         : funcionarioData;
-
-      // 🔍 DEBUG: Log dos dados do funcionário
-      console.log('🔍 DEBUG - Dados do funcionário:', {
-        funcionarioData,
-        isArray: Array.isArray(funcionarioData),
-        funcionario,
-        funcionarioId: usuario?.funcionario_id,
-      });
 
       // Monta o perfil completo do usuário
       const userProfile: UserProfile = {
