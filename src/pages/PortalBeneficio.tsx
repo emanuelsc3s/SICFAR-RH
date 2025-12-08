@@ -1,13 +1,43 @@
-import { Gift, DollarSign, Clock, Fuel, Cross, Home, Plus, Users, QrCode, Download, Eye, Heart, Bus } from "lucide-react";
+import { Gift, DollarSign, Clock, Fuel, Cross, Home, Plus, Users, QrCode, Download, Eye, Heart, Bus, Flame, Pill, LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+
+// Interfaces TypeScript para vouchers
+interface BeneficioData {
+  beneficio: string;
+  descricao: string;
+  icone: string;
+}
+
+interface VoucherComBeneficio {
+  voucher_id: string;
+  numero_voucher: string;
+  data_emissao: string;
+  data_validade: string;
+  data_resgate: string | null;
+  hora_resgate: string | null;
+  valor: number;
+  status: 'pendente' | 'emitido' | 'aprovado' | 'resgatado' | 'expirado' | 'cancelado';
+  beneficio_id: number;
+  // JOIN pode retornar array ou objeto (padrão Supabase)
+  tbbeneficio: BeneficioData | BeneficioData[] | null;
+}
+
 // Atualizado para forçar rebuild
 const PortalBeneficio = () => {
   const navigate = useNavigate();
   const [activeButton, setActiveButton] = useState("Início");
+
+  // Estados para vouchers dinâmicos
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const [vouchers, setVouchers] = useState<VoucherComBeneficio[]>([]);
+  const [isLoadingVouchers, setIsLoadingVouchers] = useState(true);
 
   const navigationButtons = [
     { name: "Início", icon: Home },
@@ -73,19 +103,152 @@ const PortalBeneficio = () => {
     value: "R$ 35,00",
     icon: Bus
   }];
-  const meusVouchers = [{
-    title: "Vale Alimentação",
-    value: "R$ 500,00",
-    expiry: "14/02/2024",
-    status: "Emitido",
-    statusColor: "bg-blue-100 text-blue-800"
-  }, {
-    title: "Vale Transporte",
-    value: "R$ 150,00",
-    expiry: "09/02/2024",
-    status: "Resgatado",
-    statusColor: "bg-blue-100 text-blue-800"
-  }];
+
+  // useEffect para carregar vouchers do Supabase
+  useEffect(() => {
+    const carregarVouchers = async () => {
+      // Validação: usuário autenticado
+      if (!user?.funcionarioId) {
+        console.log('ℹ️ Usuário sem funcionario_id, aguardando autenticação...');
+        setIsLoadingVouchers(false);
+        return;
+      }
+
+      try {
+        setIsLoadingVouchers(true);
+
+        const { data, error } = await supabase
+          .from('tbvoucher')
+          .select(`
+            voucher_id,
+            numero_voucher,
+            data_emissao,
+            data_validade,
+            data_resgate,
+            hora_resgate,
+            valor,
+            status,
+            beneficio_id,
+            tbbeneficio:beneficio_id (
+              beneficio,
+              descricao,
+              icone
+            )
+          `)
+          .eq('funcionario_id', user.funcionarioId)
+          .eq('deletado', 'N')
+          .order('data_emissao', { ascending: false });
+
+        if (error) {
+          console.error('❌ Erro ao carregar vouchers:', error);
+          toast.error('Erro ao carregar vouchers', {
+            description: 'Não foi possível carregar seus vouchers.',
+            duration: 5000
+          });
+          setVouchers([]);
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          console.log('ℹ️ Nenhum voucher encontrado para o funcionário');
+          setVouchers([]);
+          return;
+        }
+
+        console.log(`✅ ${data.length} voucher(s) carregado(s)`);
+        setVouchers(data);
+
+      } catch (error) {
+        console.error('❌ Erro inesperado ao carregar vouchers:', error);
+        toast.error('Erro inesperado', {
+          description: 'Ocorreu um erro ao carregar os vouchers.',
+          duration: 5000
+        });
+        setVouchers([]);
+      } finally {
+        setIsLoadingVouchers(false);
+      }
+    };
+
+    if (!isAuthLoading) {
+      carregarVouchers();
+    }
+  }, [user?.funcionarioId, isAuthLoading]);
+
+  // Funções auxiliares de formatação
+  const formatarMoeda = (valor: number): string => {
+    return valor.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+  };
+
+  const formatarData = (dataISO: string): string => {
+    // Split manual evita problema de timezone ao interpretar DATE do PostgreSQL
+    const [ano, mes, dia] = dataISO.split('-');
+    return `${dia}/${mes}/${ano}`;
+  };
+
+  const formatarHora = (horaString: string | null): string => {
+    if (!horaString) return '--:--';
+    // horaString vem no formato HH:MM:SS ou HH:MM:SS.ffffff
+    const [horas, minutos] = horaString.split(':');
+    return `${horas}:${minutos}`;
+  };
+
+  const obterLabelStatus = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      'pendente': 'Pendente',
+      'emitido': 'Emitido',
+      'aprovado': 'Aprovado',
+      'resgatado': 'Resgatado',
+      'expirado': 'Expirado',
+      'cancelado': 'Cancelado'
+    };
+    return statusMap[status] || status;
+  };
+
+  const obterCorStatus = (status: string): { bg: string; text: string } => {
+    const coresMap: Record<string, { bg: string; text: string }> = {
+      'pendente': { bg: '#FFA50020', text: '#FF8C00' },    // Laranja
+      'emitido': { bg: '#1E3A8A20', text: '#1E3A8A' },     // Azul (padrão atual)
+      'aprovado': { bg: '#10B98120', text: '#059669' },    // Verde
+      'resgatado': { bg: '#6B728020', text: '#4B5563' },   // Cinza
+      'expirado': { bg: '#EF444420', text: '#DC2626' },    // Vermelho
+      'cancelado': { bg: '#6B728020', text: '#6B7280' }    // Cinza escuro
+    };
+    return coresMap[status] || { bg: '#1E3A8A20', text: '#1E3A8A' };
+  };
+
+  // Mapa de ícones dinâmicos baseado no benefício
+  const obterIconeBeneficio = (iconeName: string | undefined | null): LucideIcon => {
+    if (!iconeName) {
+      console.warn('⚠️ Ícone não definido, usando Gift como padrão');
+      return Gift;
+    }
+
+    const iconMap: Record<string, LucideIcon> = {
+      'flame': Flame,      // Vale Gás
+      'pill': Pill,        // Farmácias
+      'fuel': Fuel,        // Vale Combustível
+      'heart': Heart,      // Plano de Saúde
+      'bus': Bus,          // Vale Transporte
+      'gift': Gift         // Padrão
+    };
+
+    // Normalizar para lowercase e trim
+    const normalizedIconName = iconeName.toLowerCase().trim();
+
+    const icon = iconMap[normalizedIconName];
+
+    if (!icon) {
+      console.warn(`⚠️ Ícone "${iconeName}" não encontrado no mapa, usando Gift como padrão`);
+      return Gift;
+    }
+
+    return icon;
+  };
+
   return <div className="min-h-screen bg-background">
       {/* Header Navigation */}
       <header className="text-white px-6 py-2" style={{
@@ -208,28 +371,117 @@ const PortalBeneficio = () => {
               </Button>
             </div>
             <div className="space-y-4">
-              {meusVouchers.map((voucher, index) => <Card key={index} className="border border-gray-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="font-semibold text-gray-900">{voucher.title}</h3>
-                          <Badge style={{
-                        backgroundColor: "#1E3A8A20",
-                        color: "#1E3A8A"
-                      }}>
-                            {voucher.status}
-                          </Badge>
+              {/* Loading State */}
+              {isLoadingVouchers ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Carregando vouchers...</p>
+                </div>
+              ) : vouchers.length === 0 ? (
+                /* Empty State */
+                <div className="text-center py-8 border border-gray-200 rounded-lg bg-gray-50">
+                  <Gift className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 font-medium">Nenhum voucher disponível</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Seus vouchers aparecerão aqui assim que forem emitidos
+                  </p>
+                </div>
+              ) : (
+                /* Cards Dinâmicos */
+                vouchers.map((voucher) => {
+                  // Tratar JOIN que pode retornar array ou objeto (padrão Supabase)
+                  const beneficioData = voucher.tbbeneficio;
+                  const beneficio = Array.isArray(beneficioData)
+                    ? beneficioData[0]
+                    : beneficioData;
+
+                  const cores = obterCorStatus(voucher.status);
+                  const nomeBeneficio = beneficio?.beneficio || 'Benefício';
+
+                  // Debug: verificar valor do ícone
+                  if (beneficio?.icone) {
+                    console.log(`🔍 Ícone do benefício "${nomeBeneficio}":`, beneficio.icone);
+                  }
+
+                  const IconeBeneficio = obterIconeBeneficio(beneficio?.icone);
+
+                  return (
+                    <Card key={voucher.voucher_id} className="border-l-4 hover:shadow-md transition-shadow duration-200" style={{ borderLeftColor: cores.text }}>
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            {/* Cabeçalho: Ícone + Título + Badge */}
+                            <div className="flex items-center gap-3 mb-3">
+                              <div
+                                className="w-10 h-10 rounded-lg flex items-center justify-center"
+                                style={{
+                                  backgroundColor: cores.bg,
+                                  color: cores.text
+                                }}
+                              >
+                                <IconeBeneficio className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h3 className="font-semibold text-gray-900 text-base">
+                                    {nomeBeneficio}
+                                  </h3>
+                                  <Badge
+                                    style={{
+                                      backgroundColor: cores.bg,
+                                      color: cores.text
+                                    }}
+                                  >
+                                    {obterLabelStatus(voucher.status)}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Número do Voucher */}
+                            <div className="mb-2">
+                              <p className="text-xs text-gray-500 mb-1">Número do Voucher</p>
+                              <p className="font-mono font-bold text-gray-900 text-sm tracking-wide">
+                                {voucher.numero_voucher}
+                              </p>
+                            </div>
+
+                            {/* Rodapé: Emissão, Valor, Validade e Resgate */}
+                            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                              <div>
+                                <p className="text-xs text-gray-500">Emitido em</p>
+                                <p className="text-sm font-medium text-gray-700">
+                                  {formatarData(voucher.data_emissao)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">Valor</p>
+                                <p className="text-sm font-bold text-gray-900">
+                                  {formatarMoeda(voucher.valor)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">Válido até</p>
+                                <p className="text-sm font-medium text-gray-700">
+                                  {formatarData(voucher.data_validade)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">Resgate</p>
+                                <p className="text-sm font-medium text-gray-700">
+                                  {voucher.data_resgate
+                                    ? `${formatarData(voucher.data_resgate)} ${formatarHora(voucher.hora_resgate)}`
+                                    : 'Não resgatado'
+                                  }
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-lg font-bold text-gray-900 mb-1">{voucher.value}</p>
-                        <p className="text-sm text-gray-600">Expira em {voucher.expiry}</p>
-                      </div>
-                      <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
-                        <Gift className="w-4 h-4 text-gray-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>)}
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
