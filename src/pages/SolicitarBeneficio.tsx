@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Home, Plus, Users, QrCode, Download, DollarSign, Eye, ArrowLeft, ArrowRight, Flame, Pill, Car, Heart, Bus, Fuel, LogOut, Settings, User as UserIcon, ChevronDown, LucideIcon, Loader2 } from "lucide-react";
+import { Home, Plus, Users, QrCode, Download, DollarSign, Eye, ArrowLeft, ArrowRight, Flame, Pill, Car, Heart, Bus, Fuel, LogOut, Settings, User as UserIcon, ChevronDown, LucideIcon, Loader2, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +21,14 @@ import { toast } from "sonner";
 import { generateVoucherPDF } from "@/utils/pdfGenerator";
 import { supabase } from "@/lib/supabase";
 import { VoucherEmitido, salvarVoucherEmitido } from "@/utils/voucherStorage";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Interface para os dados do colaborador
 interface ColaboradorData {
@@ -121,6 +129,10 @@ const SolicitarBeneficio = () => {
     beneficio: Beneficio;
     qrCodeUrl: string;
   }>>([]);
+
+  // Estados para validação de vouchers duplicados
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [duplicateBeneficios, setDuplicateBeneficios] = useState<string[]>([]);
 
   // Form data for step 2
   const [formData, setFormData] = useState({
@@ -385,6 +397,58 @@ const SolicitarBeneficio = () => {
    *
    * =====================================================================
    */
+
+  /**
+   * Valida se o usuário já possui vouchers emitidos não resgatados
+   * para os benefícios selecionados
+   */
+  const validarVouchersDuplicados = async (
+    userId: string,
+    selectedBeneficioIds: string[]
+  ): Promise<string[]> => {
+    console.log('🔍 Validando vouchers duplicados...');
+
+    try {
+      const beneficioIdsNumber = selectedBeneficioIds.map(id => parseInt(id, 10));
+
+      const { data: vouchersExistentes, error } = await supabase
+        .from('tbvoucher')
+        .select('beneficio_id, numero_voucher')
+        .eq('created_by', userId)
+        .in('beneficio_id', beneficioIdsNumber)
+        .eq('status', 'emitido')
+        .is('data_resgate', null)
+        .eq('deletado', 'N');
+
+      if (error) {
+        console.error('❌ Erro ao validar vouchers:', error);
+        return []; // Fail-safe: permitir continuação
+      }
+
+      if (!vouchersExistentes || vouchersExistentes.length === 0) {
+        console.log('✅ Nenhum voucher duplicado');
+        return [];
+      }
+
+      // Mapear beneficio_id → nome do benefício
+      const beneficiosDuplicados: string[] = [];
+      const beneficiosIdsEncontrados = vouchersExistentes.map(v => v.beneficio_id);
+
+      for (const beneficioId of beneficiosIdsEncontrados) {
+        const beneficio = beneficios.find(b => b.id === beneficioId.toString());
+        if (beneficio) {
+          beneficiosDuplicados.push(beneficio.title);
+        }
+      }
+
+      return beneficiosDuplicados;
+
+    } catch (error) {
+      console.error('❌ Erro inesperado:', error);
+      return []; // Fail-safe
+    }
+  };
+
   const handleConfirmSolicitation = async () => {
     console.log('🚀 Iniciando handleConfirmSolicitation...');
     console.log('📋 MODO: Geração de vouchers INDIVIDUAIS (um por benefício)');
@@ -593,6 +657,24 @@ const SolicitarBeneficio = () => {
       );
 
       console.log('✅ Valores dos benefícios carregados:', Object.fromEntries(beneficioValorMap));
+
+      // ===================================================================
+      // VALIDAÇÃO: Verificar vouchers duplicados
+      // ===================================================================
+      console.log('🔍 Validando vouchers emitidos não resgatados...');
+
+      const beneficiosDuplicados = await validarVouchersDuplicados(userId, selectedBeneficios);
+
+      if (beneficiosDuplicados.length > 0) {
+        console.error('❌ Vouchers duplicados encontrados:', beneficiosDuplicados);
+
+        setDuplicateBeneficios(beneficiosDuplicados);
+        setIsDuplicateDialogOpen(true);
+        setIsProcessing(false);
+        return;
+      }
+
+      console.log('✅ Validação passou: Nenhum voucher duplicado');
 
       // ===================================================================
       // LOOP: Processa CADA benefício individualmente
@@ -1477,6 +1559,56 @@ const SolicitarBeneficio = () => {
           )}
         </div>
       )}
+
+      {/* Modal de Voucher Duplicado */}
+      <Dialog open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                <AlertCircle className="h-6 w-6 text-orange-600" />
+              </div>
+              <DialogTitle className="text-xl font-semibold text-gray-900">
+                Voucher Já Emitido
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+
+          <DialogDescription className="text-gray-600 space-y-4">
+            <p>
+              Não é possível solicitar um novo voucher para {duplicateBeneficios.length === 1 ? 'o benefício' : 'os benefícios'}:
+            </p>
+
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              {duplicateBeneficios.map((beneficio, index) => (
+                <li key={index} className="font-medium text-gray-900">
+                  {beneficio}
+                </li>
+              ))}
+            </ul>
+
+            <p>
+              Você possui {duplicateBeneficios.length === 1 ? 'um voucher emitido' : 'vouchers emitidos'} ainda não resgatado{duplicateBeneficios.length === 1 ? '' : 's'} para {duplicateBeneficios.length === 1 ? 'este benefício' : 'estes benefícios'}.
+            </p>
+
+            <p className="text-sm text-gray-500">
+              Resgate {duplicateBeneficios.length === 1 ? 'o voucher existente' : 'os vouchers existentes'} antes de solicitar {duplicateBeneficios.length === 1 ? 'um novo' : 'novos'}.
+            </p>
+          </DialogDescription>
+
+          <DialogFooter className="mt-6">
+            <Button
+              onClick={() => {
+                setIsDuplicateDialogOpen(false);
+                setDuplicateBeneficios([]);
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              Entendi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
