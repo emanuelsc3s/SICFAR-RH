@@ -9,7 +9,7 @@
  * 
  * Uso:
  * ```tsx
- * // No componente
+ * // No componente (importar useAuth de @/hooks/useAuth)
  * const { user, isLoading, isAuthenticated } = useAuth();
  * 
  * // Acessar dados
@@ -20,7 +20,7 @@
  * ```
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { AuthContextType, UserProfile, SupabaseUserData } from '@/types/auth';
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
@@ -38,19 +38,6 @@ const initialAuthState: AuthContextType = {
 
 // Criação do contexto
 const AuthContext = createContext<AuthContextType>(initialAuthState);
-
-/**
- * Hook para acessar o contexto de autenticação
- */
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  
-  if (!context) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
-  }
-  
-  return context;
-}
 
 interface AuthProviderProps {
   children: React.ReactNode;

@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { NotificacaoSolicitacao } from "@/types/notificacao";
 import { carregarSolicitacoes, marcarTodasComoLidas } from "@/utils/solicitacoesStorage";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
   const navigate = useNavigate();
