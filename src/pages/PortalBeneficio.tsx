@@ -1,7 +1,13 @@
-import { Gift, DollarSign, Clock, Fuel, Cross, Home, Plus, Users, QrCode, Download, Eye, Heart, Bus, Flame, Pill, LucideIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Gift, DollarSign, Clock, Fuel, Cross, Home, Plus, Users, QrCode, Download, Eye, Heart, Bus, Flame, Pill, LucideIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +44,14 @@ const PortalBeneficio = () => {
   const { user, isLoading: isAuthLoading } = useAuth();
   const [vouchers, setVouchers] = useState<VoucherComBeneficio[]>([]);
   const [isLoadingVouchers, setIsLoadingVouchers] = useState(true);
+
+  // Estados para controle dos carrosséis
+  const [vouchersApi, setVouchersApi] = useState<CarouselApi>();
+  const [programasApi, setProgramasApi] = useState<CarouselApi>();
+  const [canScrollPrevVouchers, setCanScrollPrevVouchers] = useState(false);
+  const [canScrollNextVouchers, setCanScrollNextVouchers] = useState(false);
+  const [canScrollPrevProgramas, setCanScrollPrevProgramas] = useState(false);
+  const [canScrollNextProgramas, setCanScrollNextProgramas] = useState(false);
 
   const navigationButtons = [
     { name: "Início", icon: Home },
@@ -174,6 +188,44 @@ const PortalBeneficio = () => {
       carregarVouchers();
     }
   }, [user?.funcionarioId, isAuthLoading]);
+
+  // useEffect para monitorar estado do carrossel de vouchers
+  useEffect(() => {
+    if (!vouchersApi) return;
+
+    const updateScrollState = () => {
+      setCanScrollPrevVouchers(vouchersApi.canScrollPrev());
+      setCanScrollNextVouchers(vouchersApi.canScrollNext());
+    };
+
+    updateScrollState();
+    vouchersApi.on("select", updateScrollState);
+    vouchersApi.on("reInit", updateScrollState);
+
+    return () => {
+      vouchersApi.off("select", updateScrollState);
+      vouchersApi.off("reInit", updateScrollState);
+    };
+  }, [vouchersApi]);
+
+  // useEffect para monitorar estado do carrossel de programas
+  useEffect(() => {
+    if (!programasApi) return;
+
+    const updateScrollState = () => {
+      setCanScrollPrevProgramas(programasApi.canScrollPrev());
+      setCanScrollNextProgramas(programasApi.canScrollNext());
+    };
+
+    updateScrollState();
+    programasApi.on("select", updateScrollState);
+    programasApi.on("reInit", updateScrollState);
+
+    return () => {
+      programasApi.off("select", updateScrollState);
+      programasApi.off("reInit", updateScrollState);
+    };
+  }, [programasApi]);
 
   // Funções auxiliares de formatação
   const formatarMoeda = (valor: number): string => {
@@ -331,159 +383,225 @@ const PortalBeneficio = () => {
             </Card>)}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Programas Disponíveis */}
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Programas Disponíveis</h2>
-            <div className="space-y-4">
-              {programasDisponiveis.map((programa, index) => <Card key={index} className="border border-gray-200">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-start space-x-4">
-                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <programa.icon className="w-6 h-6 text-gray-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900 mb-1">{programa.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2">{programa.description}</p>
-                          <p className="font-bold text-gray-900">{programa.value}</p>
-                        </div>
-                      </div>
-                      <Button style={{
-                    backgroundColor: "#1E3A8A"
-                  }} className="text-white hover:opacity-90">
-                        Solicitar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>)}
-            </div>
-          </div>
-
-          {/* Meus Vouchers */}
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Meus Vouchers</h2>
-              <Button variant="ghost" style={{
-              color: "#1E3A8A"
-            }} className="hover:opacity-80">
+        {/* Seção Meus Vouchers - Carrossel Horizontal */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Meus Vouchers</h2>
+            <div className="flex items-center gap-1">
+              {/* Botões de navegação modernos */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full hover:bg-gray-100 disabled:opacity-30"
+                onClick={() => vouchersApi?.scrollPrev()}
+                disabled={!canScrollPrevVouchers}
+              >
+                <ChevronLeft className="h-5 w-5 text-gray-600" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full hover:bg-gray-100 disabled:opacity-30"
+                onClick={() => vouchersApi?.scrollNext()}
+                disabled={!canScrollNextVouchers}
+              >
+                <ChevronRight className="h-5 w-5 text-gray-600" />
+              </Button>
+              <Button variant="ghost" style={{ color: "#1E3A8A" }} className="hover:opacity-80 ml-2">
                 Ver Todos
               </Button>
             </div>
-            <div className="space-y-4">
-              {/* Loading State */}
-              {isLoadingVouchers ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Carregando vouchers...</p>
-                </div>
-              ) : vouchers.length === 0 ? (
-                /* Empty State */
-                <div className="text-center py-8 border border-gray-200 rounded-lg bg-gray-50">
-                  <Gift className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 font-medium">Nenhum voucher disponível</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Seus vouchers aparecerão aqui assim que forem emitidos
-                  </p>
-                </div>
-              ) : (
-                /* Cards Dinâmicos */
-                vouchers.map((voucher) => {
-                  // Tratar JOIN que pode retornar array ou objeto (padrão Supabase)
-                  const beneficioData = voucher.tbbeneficio;
-                  const beneficio = Array.isArray(beneficioData)
-                    ? beneficioData[0]
-                    : beneficioData;
+          </div>
 
-                  const cores = obterCorStatus(voucher.status);
-                  const nomeBeneficio = beneficio?.beneficio || 'Benefício';
+          {/* Loading State */}
+          {isLoadingVouchers ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Carregando vouchers...</p>
+            </div>
+          ) : vouchers.length === 0 ? (
+            /* Empty State */
+            <div className="text-center py-8 border border-gray-200 rounded-lg bg-gray-50">
+              <Gift className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600 font-medium">Nenhum voucher disponível</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Seus vouchers aparecerão aqui assim que forem emitidos
+              </p>
+            </div>
+          ) : (
+            /* Carrossel de Vouchers */
+            <Carousel
+              opts={{
+                align: "start",
+                loop: false,
+              }}
+              setApi={setVouchersApi}
+              className="w-full"
+            >
+                <CarouselContent className="-ml-4">
+                  {vouchers.map((voucher) => {
+                    // Tratar JOIN que pode retornar array ou objeto (padrão Supabase)
+                    const beneficioData = voucher.tbbeneficio;
+                    const beneficio = Array.isArray(beneficioData)
+                      ? beneficioData[0]
+                      : beneficioData;
 
-                  // Debug: verificar valor do ícone
-                  if (beneficio?.icone) {
-                    console.log(`🔍 Ícone do benefício "${nomeBeneficio}":`, beneficio.icone);
-                  }
+                    const cores = obterCorStatus(voucher.status);
+                    const nomeBeneficio = beneficio?.beneficio || 'Benefício';
 
-                  const IconeBeneficio = obterIconeBeneficio(beneficio?.icone);
+                    // Debug: verificar valor do ícone
+                    if (beneficio?.icone) {
+                      console.log(`🔍 Ícone do benefício "${nomeBeneficio}":`, beneficio.icone);
+                    }
 
-                  return (
-                    <Card key={voucher.voucher_id} className="border-l-4 hover:shadow-md transition-shadow duration-200" style={{ borderLeftColor: cores.text }}>
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            {/* Cabeçalho: Ícone + Título + Badge */}
-                            <div className="flex items-center gap-3 mb-3">
-                              <div
-                                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                                style={{
-                                  backgroundColor: cores.bg,
-                                  color: cores.text
-                                }}
-                              >
-                                <IconeBeneficio className="w-5 h-5" />
-                              </div>
+                    const IconeBeneficio = obterIconeBeneficio(beneficio?.icone);
+
+                    return (
+                      <CarouselItem key={voucher.voucher_id} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                        <Card className="border-l-4 hover:shadow-md transition-shadow duration-200 h-full" style={{ borderLeftColor: cores.text }}>
+                          <CardContent className="p-5">
+                            <div className="flex items-start justify-between gap-4">
                               <div className="flex-1">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <h3 className="font-semibold text-gray-900 text-base">
-                                    {nomeBeneficio}
-                                  </h3>
-                                  <Badge
+                                {/* Cabeçalho: Ícone + Título + Badge */}
+                                <div className="flex items-center gap-3 mb-3">
+                                  <div
+                                    className="w-10 h-10 rounded-lg flex items-center justify-center"
                                     style={{
                                       backgroundColor: cores.bg,
                                       color: cores.text
                                     }}
                                   >
-                                    {obterLabelStatus(voucher.status)}
-                                  </Badge>
+                                    <IconeBeneficio className="w-5 h-5" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h3 className="font-semibold text-gray-900 text-base">
+                                        {nomeBeneficio}
+                                      </h3>
+                                      <Badge
+                                        style={{
+                                          backgroundColor: cores.bg,
+                                          color: cores.text
+                                        }}
+                                      >
+                                        {obterLabelStatus(voucher.status)}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Número do Voucher */}
+                                <div className="mb-2">
+                                  <p className="text-xs text-gray-500 mb-1">Número do Voucher</p>
+                                  <p className="font-mono font-bold text-gray-900 text-sm tracking-wide">
+                                    {voucher.numero_voucher}
+                                  </p>
+                                </div>
+
+                                {/* Rodapé: Emissão, Valor, Validade e Resgate */}
+                                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                                  <div>
+                                    <p className="text-xs text-gray-500">Emitido em</p>
+                                    <p className="text-sm font-medium text-gray-700">
+                                      {formatarData(voucher.data_emissao)}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Valor</p>
+                                    <p className="text-sm font-bold text-gray-900">
+                                      {formatarMoeda(voucher.valor)}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Válido até</p>
+                                    <p className="text-sm font-medium text-gray-700">
+                                      {formatarData(voucher.data_validade)}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Resgate</p>
+                                    <p className="text-sm font-medium text-gray-700">
+                                      {voucher.data_resgate
+                                        ? `${formatarData(voucher.data_resgate)} ${formatarHora(voucher.hora_resgate)}`
+                                        : 'Não resgatado'
+                                      }
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
+                          </CardContent>
+                        </Card>
+                      </CarouselItem>
+                    );
+                  })}
+                </CarouselContent>
+              </Carousel>
+          )}
+        </div>
 
-                            {/* Número do Voucher */}
-                            <div className="mb-2">
-                              <p className="text-xs text-gray-500 mb-1">Número do Voucher</p>
-                              <p className="font-mono font-bold text-gray-900 text-sm tracking-wide">
-                                {voucher.numero_voucher}
-                              </p>
-                            </div>
-
-                            {/* Rodapé: Emissão, Valor, Validade e Resgate */}
-                            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
-                              <div>
-                                <p className="text-xs text-gray-500">Emitido em</p>
-                                <p className="text-sm font-medium text-gray-700">
-                                  {formatarData(voucher.data_emissao)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Valor</p>
-                                <p className="text-sm font-bold text-gray-900">
-                                  {formatarMoeda(voucher.valor)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Válido até</p>
-                                <p className="text-sm font-medium text-gray-700">
-                                  {formatarData(voucher.data_validade)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Resgate</p>
-                                <p className="text-sm font-medium text-gray-700">
-                                  {voucher.data_resgate
-                                    ? `${formatarData(voucher.data_resgate)} ${formatarHora(voucher.hora_resgate)}`
-                                    : 'Não resgatado'
-                                  }
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              )}
+        {/* Seção Programas Disponíveis - Carrossel Horizontal */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Programas Disponíveis</h2>
+            <div className="flex items-center gap-1">
+              {/* Botões de navegação modernos */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full hover:bg-gray-100 disabled:opacity-30"
+                onClick={() => programasApi?.scrollPrev()}
+                disabled={!canScrollPrevProgramas}
+              >
+                <ChevronLeft className="h-5 w-5 text-gray-600" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full hover:bg-gray-100 disabled:opacity-30"
+                onClick={() => programasApi?.scrollNext()}
+                disabled={!canScrollNextProgramas}
+              >
+                <ChevronRight className="h-5 w-5 text-gray-600" />
+              </Button>
             </div>
           </div>
+          <Carousel
+            opts={{
+              align: "start",
+              loop: false,
+            }}
+            setApi={setProgramasApi}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-4">
+              {programasDisponiveis.map((programa, index) => (
+                <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                  <Card className="border border-gray-200 h-full">
+                    <CardContent className="p-6 flex flex-col h-full">
+                      <div className="flex items-start space-x-4 flex-1">
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <programa.icon className="w-6 h-6 text-gray-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-1">{programa.title}</h3>
+                          <p className="text-sm text-gray-600 mb-2">{programa.description}</p>
+                          <p className="font-bold text-gray-900">{programa.value}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <Button
+                          style={{ backgroundColor: "#1E3A8A" }}
+                          className="text-white hover:opacity-90 w-full"
+                        >
+                          Solicitar
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
         </div>
       </div>
     </div>;
