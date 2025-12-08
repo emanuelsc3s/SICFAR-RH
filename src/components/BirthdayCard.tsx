@@ -26,8 +26,8 @@ const BirthdayCard = () => {
       <Card className="tile-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center text-lg">
-            <Cake className="h-5 w-5 text-primary mr-2" />
-            Aniversariantes do Mês
+            <Cake className="h-5 w-5 text-primary mr-2 shrink-0 self-center" />
+            <span className="leading-normal">Aniversariantes</span>
             <Badge variant="secondary" className="ml-auto">
               {isLoading ? '...' : aniversariantes.length}
             </Badge>
