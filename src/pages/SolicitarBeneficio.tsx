@@ -20,6 +20,7 @@ import QRCode from "qrcode";
 import { toast } from "sonner";
 import { generateVoucherPDF } from "@/utils/pdfGenerator";
 import { supabase } from "@/lib/supabase";
+import { VoucherEmitido, salvarVoucherEmitido } from "@/utils/voucherStorage";
 
 // Interface para os dados do colaborador
 interface ColaboradorData {
@@ -712,6 +713,7 @@ const SolicitarBeneficio = () => {
             id: beneficio.id,
             title: beneficio.title,
             description: beneficio.description,
+            value: `R$ ${valorBeneficio.toFixed(2).replace('.', ',')}`,
             icon: beneficio.icon
           };
 

@@ -2,7 +2,7 @@
  * Hook para gerenciar comentários de aniversariantes
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { birthdayStorage } from '@/services/birthdayStorage';
 import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './use-toast';
@@ -21,19 +21,19 @@ export function useBirthdayComments(funcionarioMatricula: string): UseBirthdayCo
   const [comments, setComments] = useState<ComentarioAniversario[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Carregar comentários ao montar e quando mudar o funcionário
-  useEffect(() => {
-    loadComments();
-  }, [funcionarioMatricula]);
-
-  const loadComments = () => {
+  const loadComments = useCallback(() => {
     try {
       const allComments = birthdayStorage.getComments(funcionarioMatricula);
       setComments(allComments);
     } catch (error) {
       console.error('Erro ao carregar comentários:', error);
     }
-  };
+  }, [funcionarioMatricula]);
+
+  // Carregar comentários ao montar e quando mudar o funcionário
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
 
   const addComment = async (mensagem: string) => {
     if (!isLoggedIn || !user) {

@@ -32,7 +32,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export async function criarUsuarioConfirmado(params: {
   email: string;
   password: string;
-  user_metadata?: Record<string, any>;
+  user_metadata?: Record<string, unknown>;
 }) {
   // IMPORTANTE: Esta função requer service_role key
   // Não use em produção com a chave exposta no frontend

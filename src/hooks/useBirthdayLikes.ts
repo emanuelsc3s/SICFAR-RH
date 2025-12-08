@@ -2,7 +2,7 @@
  * Hook para gerenciar curtidas de aniversariantes
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { birthdayStorage } from '@/services/birthdayStorage';
 import { useCurrentUser } from './useCurrentUser';
 import { useToast } from './use-toast';
@@ -21,12 +21,7 @@ export function useBirthdayLikes(funcionarioMatricula: string): UseBirthdayLikes
   const [isLiked, setIsLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Carregar curtidas ao montar e quando mudar o funcionário ou usuário
-  useEffect(() => {
-    loadLikes();
-  }, [funcionarioMatricula, autorMatricula]);
-
-  const loadLikes = () => {
+  const loadLikes = useCallback(() => {
     try {
       const likes = birthdayStorage.getLikes(funcionarioMatricula);
       setTotalLikes(likes.length);
@@ -42,7 +37,12 @@ export function useBirthdayLikes(funcionarioMatricula: string): UseBirthdayLikes
     } catch (error) {
       console.error('Erro ao carregar curtidas:', error);
     }
-  };
+  }, [funcionarioMatricula, autorMatricula]);
+
+  // Carregar curtidas ao montar e quando mudar o funcionário ou usuário
+  useEffect(() => {
+    loadLikes();
+  }, [loadLikes]);
 
   const toggleLike = async () => {
     if (!isLoggedIn || !autorMatricula) {
