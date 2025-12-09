@@ -112,8 +112,6 @@ export function useBirthdayData(): UseBirthdayDataReturn {
         return;
       }
 
-      console.log(`🔍 Total de funcionários carregados: ${todosFuncionarios.length}`);
-
       // Filtrar por mês atual e dia >= dia atual, então mapear para o formato BirthdayPerson
       const aniversariantesDoMes = todosFuncionarios
         .filter(funcionario => {
@@ -163,7 +161,6 @@ export function useBirthdayData(): UseBirthdayDataReturn {
         });
 
       setAniversariantes(aniversariantesDoMes);
-      console.log(`✅ ${aniversariantesDoMes.length} aniversariante(s) encontrado(s) no mês`);
     } catch (err) {
       console.error('❌ Erro inesperado ao buscar aniversariantes:', err);
       setError('Erro inesperado ao carregar aniversariantes');

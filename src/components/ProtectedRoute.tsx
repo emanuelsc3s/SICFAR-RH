@@ -40,11 +40,9 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
         if (session) {
           // Usuário está autenticado
-          console.log("✅ Sessão ativa encontrada para:", session.user.email);
           setIsAuthenticated(true);
         } else {
           // Não há sessão ativa
-          console.log("⚠️ Nenhuma sessão ativa encontrada");
           setIsAuthenticated(false);
         }
       } catch (error) {
@@ -60,16 +58,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     // Listener para mudanças no estado de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("🔄 Mudança no estado de autenticação:", event);
         
         if (event === 'SIGNED_IN' && session) {
-          console.log("✅ Usuário autenticado:", session.user.email);
           setIsAuthenticated(true);
         } else if (event === 'SIGNED_OUT') {
-          console.log("⚠️ Usuário desconectado");
           setIsAuthenticated(false);
         } else if (event === 'TOKEN_REFRESHED' && session) {
-          console.log("🔄 Token atualizado");
           setIsAuthenticated(true);
         }
       }
@@ -95,7 +89,6 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // Se não estiver autenticado, redireciona para login
   if (!isAuthenticated) {
-    console.log("🔒 Acesso negado - Redirecionando para login");
     return <Navigate to="/login" replace />;
   }
 

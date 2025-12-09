@@ -114,14 +114,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         carregadoEm: new Date().toISOString(),
       };
 
-      console.log('✅ Perfil do usuário carregado:', {
-        nomeUsuario: userProfile.nomeUsuario,
-        nome: userProfile.nome,
-        cargo: userProfile.cargo,
-        email: userProfile.email,
-        matricula: userProfile.matricula,
-      });
-
       return userProfile;
     } catch (err) {
       console.error('❌ Erro ao buscar perfil:', err);
@@ -248,7 +240,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Listener para mudanças de autenticação (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
-        console.log('🔄 Auth state changed:', event);
 
         if (!isMounted) return;
         
