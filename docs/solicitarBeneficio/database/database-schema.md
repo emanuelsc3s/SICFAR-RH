@@ -372,7 +372,7 @@ CREATE TABLE tbbeneficio (
     descricao TEXT NULL,
     valor NUMERIC(10,2) NULL,
     valor_limite NUMERIC(10,2) NULL,
-    icone VARCHAR(50) NULL,
+    icone tipo_icone_beneficio NULL DEFAULT 'star',
     ativo BOOLEAN NOT NULL DEFAULT true,
 
     -- Metadados de Auditoria
@@ -403,7 +403,7 @@ COMMENT ON COLUMN tbbeneficio.beneficio IS 'Nome/título do benefício';
 COMMENT ON COLUMN tbbeneficio.descricao IS 'Descrição detalhada do benefício';
 COMMENT ON COLUMN tbbeneficio.valor IS 'Valor padrão do benefício';
 COMMENT ON COLUMN tbbeneficio.valor_limite IS 'Valor máximo permitido para solicitação deste benefício';
-COMMENT ON COLUMN tbbeneficio.icone IS 'Nome do ícone para exibição na interface';
+COMMENT ON COLUMN tbbeneficio.icone IS 'Ícone do benefício (ENUM: tipo_icone_beneficio) - deve corresponder aos ícones disponíveis no iconMap do frontend';
 COMMENT ON COLUMN tbbeneficio.ativo IS 'Indica se o benefício está disponível para solicitação';
 COMMENT ON COLUMN tbbeneficio.parceiro_id IS 'Parceiro/fornecedor associado ao benefício (opcional)';
 COMMENT ON COLUMN tbbeneficio.deletado IS 'Indica se o benefício foi deletado logicamente (S=Sim, N=Não) - Soft Delete';
@@ -903,6 +903,62 @@ CREATE TYPE voucher_status AS ENUM (
     'resgatado',    -- Utilizado pelo colaborador
     'expirado',     -- Passou da data de validade
     'cancelado'     -- Cancelado manualmente
+);
+
+-- ENUM para ícones de benefícios
+CREATE TYPE tipo_icone_beneficio AS ENUM (
+    -- Saúde e Bem-estar
+    'activity',      -- Academia/Atividades físicas
+    'apple',         -- Alimentação saudável
+    'brain',         -- Saúde mental/Terapia
+    'eye',           -- Óculos/Oftalmologia
+    'heart',         -- Saúde/Plano de saúde
+    'pill',          -- Medicamentos
+    'stethoscope',   -- Consultas médicas
+
+    -- Transporte
+    'bike',          -- Bicicleta/Mobilidade
+    'bus',           -- Transporte público
+    'car',           -- Carro
+    'fuel',          -- Combustível
+    'plane',         -- Viagens corporativas
+    'train',         -- Trem/Metrô
+
+    -- Alimentação
+    'coffee',        -- Café/Lanche
+    'pizza',         -- Fast food
+    'salad',         -- Alimentação saudável
+    'utensils',      -- Refeição/Vale alimentação
+
+    -- Educação e Desenvolvimento
+    'book-open',     -- Cursos/Educação
+    'graduation-cap', -- Formação/Graduação
+    'headphones',    -- Cursos online/E-learning
+    'laptop',        -- Tecnologia/Equipamentos
+
+    -- Financeiro
+    'credit-card',   -- Vale presente/Cartão
+    'dollar-sign',   -- Bônus/Auxílio financeiro
+    'piggy-bank',    -- Previdência/Poupança
+    'wallet',        -- Carteira/Benefícios flexíveis
+
+    -- Lazer e Qualidade de Vida
+    'baby',          -- Auxílio creche/Berçário
+    'gift',          -- Presentes/Cestas
+    'home',          -- Auxílio moradia/Home office
+    'paw-print',     -- Pet/Auxílio pet
+    'ticket',        -- Eventos/Cinema/Teatro
+    'umbrella',      -- Seguros
+
+    -- Outros
+    'dumbbell',      -- Academia/Fitness
+    'flame',         -- Chama/Energia
+    'phone',         -- Telefone/Celular corporativo
+    'shirt',         -- Uniforme/Vestuário
+    'shopping-bag',  -- Compras/Varejo
+    'sparkles',      -- Benefícios especiais
+    'star',          -- Benefício genérico/Padrão ⭐
+    'wifi'           -- Internet
 );
 
 -- Domain para CPF

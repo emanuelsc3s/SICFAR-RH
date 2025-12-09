@@ -1,5 +1,14 @@
 import { useState, useEffect } from "react";
-import { Home, Plus, Users, QrCode, Download, DollarSign, Eye, ArrowLeft, ArrowRight, Flame, Pill, Car, Heart, Bus, Fuel, LogOut, Settings, User as UserIcon, ChevronDown, LucideIcon, Loader2, AlertCircle } from "lucide-react";
+import {
+  Home, Plus, Users, QrCode, Download, DollarSign, Eye, ArrowLeft, ArrowRight,
+  Flame, Pill, Car, Heart, Bus, Fuel, LogOut, Settings, User as UserIcon,
+  ChevronDown, LucideIcon, Loader2, AlertCircle,
+  // Novos ícones para benefícios
+  Activity, Apple, Baby, Bike, BookOpen, Brain, Coffee, CreditCard, Dumbbell,
+  Gift, GraduationCap, Headphones, Laptop, PawPrint, Phone, PiggyBank, Pizza,
+  Plane, Salad, ShoppingBag, Shirt, Sparkles, Star, Stethoscope, Ticket,
+  Train, Umbrella, Utensils, Wallet, Wifi
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -94,18 +103,64 @@ interface VoucherInsertResponse {
 
 // Mapa de ícones Lucide React
 const iconMap: Record<string, LucideIcon> = {
-  'flame': Flame,
-  'pill': Pill,
-  'fuel': Fuel,
-  'heart': Heart,
-  'bus': Bus,
-  'car': Car,
+  // Saúde e Bem-estar
+  'activity': Activity,        // Academia/Atividades físicas
+  'apple': Apple,              // Alimentação saudável
+  'brain': Brain,              // Saúde mental/Terapia
+  'eye': Eye,                  // Óculos/Oftalmologia
+  'heart': Heart,              // Saúde/Plano de saúde
+  'pill': Pill,                // Medicamentos
+  'stethoscope': Stethoscope,  // Consultas médicas
+
+  // Transporte
+  'bike': Bike,                // Bicicleta/Mobilidade
+  'bus': Bus,                  // Transporte público
+  'car': Car,                  // Carro
+  'fuel': Fuel,                // Combustível
+  'plane': Plane,              // Viagens corporativas
+  'train': Train,              // Trem/Metrô
+
+  // Alimentação
+  'coffee': Coffee,            // Café/Lanche
+  'pizza': Pizza,              // Fast food
+  'salad': Salad,              // Alimentação saudável
+  'utensils': Utensils,        // Refeição/Vale alimentação
+
+  // Educação e Desenvolvimento
+  'book-open': BookOpen,       // Cursos/Educação
+  'graduation-cap': GraduationCap, // Formação/Graduação
+  'headphones': Headphones,    // Cursos online/E-learning
+  'laptop': Laptop,            // Tecnologia/Equipamentos
+
+  // Financeiro
+  'credit-card': CreditCard,   // Vale presente/Cartão
+  'dollar-sign': DollarSign,   // Bônus/Auxílio financeiro
+  'piggy-bank': PiggyBank,     // Previdência/Poupança
+  'wallet': Wallet,            // Carteira/Benefícios flexíveis
+
+  // Lazer e Qualidade de Vida
+  'baby': Baby,                // Auxílio creche/Berçário
+  'gift': Gift,                // Presentes/Cestas
+  'home': Home,                // Auxílio moradia/Home office
+  'paw-print': PawPrint,       // Pet/Auxílio pet
+  'ticket': Ticket,            // Eventos/Cinema/Teatro
+  'umbrella': Umbrella,        // Seguros
+
+  // Outros
+  'dumbbell': Dumbbell,        // Academia/Fitness
+  'flame': Flame,              // Chama/Energia
+  'phone': Phone,              // Telefone/Celular corporativo
+  'shirt': Shirt,              // Uniforme/Vestuário
+  'shopping-bag': ShoppingBag, // Compras/Varejo
+  'sparkles': Sparkles,        // Benefícios especiais
+  'star': Star,                // Benefício genérico/Padrão
+  'wifi': Wifi,                // Internet
 };
 
 // Função para obter o componente de ícone
 const getIconComponent = (iconName: string | null): LucideIcon => {
-  if (!iconName) return Pill; // Ícone padrão
-  return iconMap[iconName.toLowerCase()] || Pill; // Ícone padrão caso não encontre
+  if (!iconName) return Star; // Ícone padrão
+  return iconMap[iconName.toLowerCase()] || Star; // Ícone padrão caso não encontre
 };
 
 const SolicitarBeneficio = () => {
